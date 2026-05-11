@@ -8,7 +8,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
   nix:
@@ -21,11 +20,6 @@ jobs:
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
-
-      - name: Set up Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@v13
-        with:
-          use-flakehub: false
 
       - name: Check flake
         run: nix flake check --all-systems --no-build
