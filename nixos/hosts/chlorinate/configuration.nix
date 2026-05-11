@@ -86,6 +86,16 @@
     "flakes"
   ];
 
+  system.autoUpgrade = {
+    enable = true;
+    flake = "github:rokoucha/chlorinate#chlorinate";
+    flags = [ "--refresh" ];
+    dates = "hourly";
+    randomizedDelaySec = "15min";
+    operation = "switch";
+    allowReboot = false;
+  };
+
   boot = {
     loader = {
       efi.canTouchEfiVariables = true;
