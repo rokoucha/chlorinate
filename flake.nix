@@ -25,6 +25,8 @@
     {
       packages.${system}.mape = mape;
 
+      checks.${system}.mape = mape;
+
       nixosConfigurations.chlorinate = nixpkgs.lib.nixosSystem {
         inherit system;
         modules = [
