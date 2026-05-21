@@ -17,6 +17,15 @@ let
   itscomV4 = "172.16.254.10";
   itscomPublicV4 = "175.177.69.46";
   staticNaptServerV4 = "172.16.2.21";
+  materiaRouterASN = 64512;
+  materiaClusterASN = 64513;
+  materiaBgpPeersV4 = [
+    staticNaptServerV4
+  ];
+  materiaLbIPv4Pool = "172.16.2.64/27";
+  materiaLbIPv4Ingress = "172.16.2.64";
+  materiaLbIPv6Pool = "2404:9200:225:103::/112";
+  staticNaptTargetV4 = materiaLbIPv4Ingress;
 
   lanDhcpServerConfig = router: {
     PoolOffset = 100;
@@ -27,6 +36,23 @@ let
     EmitDNS = true;
     DNS = router;
   };
+
+  nftSet = values: "{ ${lib.concatStringsSep ", " values} }";
+  materiaBgpPeersV4Set = nftSet materiaBgpPeersV4;
+  frrNeighborConfig = lib.concatMapStringsSep "\n" (peer: ''
+     neighbor ${peer} remote-as ${toString materiaClusterASN}
+     neighbor ${peer} description materia-srv-lan
+  '') materiaBgpPeersV4;
+  frrIPv4NeighborConfig = lib.concatMapStringsSep "\n" (peer: ''
+      neighbor ${peer} activate
+      neighbor ${peer} route-map MATERIA-LB-V4-IN in
+      neighbor ${peer} route-map MATERIA-LB-OUT out
+  '') materiaBgpPeersV4;
+  frrIPv6NeighborConfig = lib.concatMapStringsSep "\n" (peer: ''
+      neighbor ${peer} activate
+      neighbor ${peer} route-map MATERIA-LB-V6-IN in
+      neighbor ${peer} route-map MATERIA-LB-OUT out
+  '') materiaBgpPeersV4;
 in
 {
   networking = {
@@ -46,6 +72,8 @@ in
         define ITSCOM_V4 = ${itscomV4}
         define ITSCOM_PUBLIC_V4 = ${itscomPublicV4}
         define STATIC_NAPT_SERVER_V4 = ${staticNaptServerV4}
+        define STATIC_NAPT_TARGET_V4 = ${staticNaptTargetV4}
+        define MATERIA_BGP_PEERS_V4 = ${materiaBgpPeersV4Set}
 
         table inet filter {
             chain input {
@@ -78,6 +106,10 @@ in
                 iifname $MGMT_LAN tcp dport 53 ct state new accept
                 iifname $LAN tcp dport 53 ct state new accept
                 iifname $SRV_LAN tcp dport 53 ct state new accept
+
+                # materia BGP peering is only accepted from Kubernetes nodes on
+                # the server LAN. Home LAN clients must never speak BGP here.
+                iifname $SRV_LAN ip saddr $MATERIA_BGP_PEERS_V4 tcp dport 179 ct state new accept
             }
 
             chain forward {
@@ -94,8 +126,8 @@ in
 
                 iifname $LAN oifname $TUN ct state new accept
                 iifname $SRV_LAN oifname $ITSCOM ct state new accept
-                iifname $SRV_LAN oifname $SRV_LAN ip daddr $STATIC_NAPT_SERVER_V4 ct state new accept
-                iifname $ITSCOM oifname $SRV_LAN ip daddr $STATIC_NAPT_SERVER_V4 ct state new accept
+                iifname $SRV_LAN oifname $SRV_LAN ip daddr $STATIC_NAPT_TARGET_V4 ct state new accept
+                iifname $ITSCOM oifname $SRV_LAN ip daddr $STATIC_NAPT_TARGET_V4 ct state new accept
                 iifname $WAN oifname $SRV_LAN meta nfproto ipv6 ct state new accept
                 iifname $LAN oifname $WAN meta nfproto ipv6 ct state new accept
                 iifname $SRV_LAN oifname $WAN meta nfproto ipv6 ct state new accept
@@ -107,9 +139,9 @@ in
                 type nat hook prerouting priority dstnat; policy accept;
 
                 # iTSCOM static NAPT -> server LAN
-                iifname $ITSCOM ip daddr { $ITSCOM_V4, $ITSCOM_PUBLIC_V4 } dnat to $STATIC_NAPT_SERVER_V4
-                iifname { $MGMT_LAN, $LAN } ip daddr $ITSCOM_PUBLIC_V4 dnat to $STATIC_NAPT_SERVER_V4
-                iifname $SRV_LAN ip daddr { $ITSCOM_V4, $ITSCOM_PUBLIC_V4 } dnat to $STATIC_NAPT_SERVER_V4
+                iifname $ITSCOM ip daddr { $ITSCOM_V4, $ITSCOM_PUBLIC_V4 } dnat to $STATIC_NAPT_TARGET_V4
+                iifname { $MGMT_LAN, $LAN } ip daddr $ITSCOM_PUBLIC_V4 dnat to $STATIC_NAPT_TARGET_V4
+                iifname $SRV_LAN ip daddr { $ITSCOM_V4, $ITSCOM_PUBLIC_V4 } dnat to $STATIC_NAPT_TARGET_V4
             }
 
             chain postrouting {
@@ -117,12 +149,47 @@ in
 
                 # Server LAN -> iTSCOM
                 oifname $ITSCOM ip saddr 172.16.2.0/24 snat to $ITSCOM_V4
-                oifname $SRV_LAN ip saddr { 172.16.0.0/24, 172.16.1.0/24 } ip daddr $STATIC_NAPT_SERVER_V4 snat to 172.16.2.1
-                oifname $SRV_LAN ip saddr 172.16.2.0/24 ip daddr $STATIC_NAPT_SERVER_V4 snat to 172.16.2.1
+                oifname $SRV_LAN ip saddr { 172.16.0.0/24, 172.16.1.0/24 } ip daddr $STATIC_NAPT_TARGET_V4 snat to 172.16.2.1
+                oifname $SRV_LAN ip saddr 172.16.2.0/24 ip daddr $STATIC_NAPT_TARGET_V4 snat to 172.16.2.1
             }
         }
       '';
     };
+  };
+
+  services.frr = {
+    bgpd.enable = true;
+    config = ''
+      ip prefix-list MATERIA-LB-V4 seq 10 permit ${materiaLbIPv4Pool} ge 32
+      ipv6 prefix-list MATERIA-LB-V6 seq 10 permit ${materiaLbIPv6Pool} ge 128
+
+      route-map MATERIA-LB-V4-IN permit 10
+       match ip address prefix-list MATERIA-LB-V4
+      exit
+      route-map MATERIA-LB-V4-IN deny 100
+      exit
+
+      route-map MATERIA-LB-V6-IN permit 10
+       match ipv6 address prefix-list MATERIA-LB-V6
+      exit
+      route-map MATERIA-LB-V6-IN deny 100
+      exit
+
+      route-map MATERIA-LB-OUT deny 100
+      exit
+
+      router bgp ${toString materiaRouterASN}
+       bgp router-id 172.16.2.1
+      ${frrNeighborConfig}
+       !
+       address-family ipv4 unicast
+      ${frrIPv4NeighborConfig}
+       exit-address-family
+       !
+       address-family ipv6 unicast
+      ${frrIPv6NeighborConfig}
+       exit-address-family
+    '';
   };
 
   services.dnsmasq = {
