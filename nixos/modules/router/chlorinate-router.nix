@@ -174,15 +174,6 @@ in
     '';
   };
 
-  systemd.services.nftables.serviceConfig = {
-    ExecStartPost = lib.mkAfter [
-      "${pkgs.systemd}/bin/systemctl try-restart mape-config.service"
-    ];
-    ExecReload = lib.mkAfter [
-      "${pkgs.systemd}/bin/systemctl try-restart mape-config.service"
-    ];
-  };
-
   services.dnsmasq = {
     enable = true;
     settings = {
