@@ -245,7 +245,7 @@ in
       "systemd-networkd.service"
     ];
     wants = [ "network-online.target" ];
-    partOf = [ "systemd-networkd.service" ];
+    partOf = [ "systemd-networkd.service" "nftables.service" ];
     path = [
       pkgs.nftables
     ];
