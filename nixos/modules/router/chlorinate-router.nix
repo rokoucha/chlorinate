@@ -20,6 +20,7 @@ let
   materiaRouterASN = 64512;
   materiaClusterASN = 64513;
   materiaBgpPeerV4 = staticNaptServerV4;
+  materiaBgpPeerV6 = "240b:10:3f6d:1402:da9e:f3ff:fe9d:854e";
   materiaLbIPv4Pool = "172.16.2.64/27";
   materiaLbIPv6Pool = "2404:9200:225:103::/112";
 
@@ -86,6 +87,7 @@ in
 
                 # Accept materia BGP only from the Kubernetes node on the server LAN.
                 iifname $SRV_LAN ip saddr ${materiaBgpPeerV4} tcp dport 179 ct state new accept
+                iifname $SRV_LAN ip6 saddr ${materiaBgpPeerV6} tcp dport 179 ct state new accept
             }
 
             chain forward {
@@ -159,6 +161,8 @@ in
        neighbor ${materiaBgpPeerV4} remote-as ${toString materiaClusterASN}
        neighbor ${materiaBgpPeerV4} description materia-srv-lan
        neighbor ${materiaBgpPeerV4} update-source 172.16.2.1
+       neighbor ${materiaBgpPeerV6} remote-as ${toString materiaClusterASN}
+       neighbor ${materiaBgpPeerV6} description materia-srv-lan-v6
        !
        address-family ipv4 unicast
         neighbor ${materiaBgpPeerV4} activate
@@ -167,9 +171,9 @@ in
        exit-address-family
        !
        address-family ipv6 unicast
-        neighbor ${materiaBgpPeerV4} activate
-        neighbor ${materiaBgpPeerV4} route-map MATERIA-LB-V6-IN in
-        neighbor ${materiaBgpPeerV4} route-map MATERIA-LB-OUT out
+        neighbor ${materiaBgpPeerV6} activate
+        neighbor ${materiaBgpPeerV6} route-map MATERIA-LB-V6-IN in
+        neighbor ${materiaBgpPeerV6} route-map MATERIA-LB-OUT out
        exit-address-family
     '';
   };
