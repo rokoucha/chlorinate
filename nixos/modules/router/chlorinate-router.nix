@@ -83,6 +83,9 @@ in
                 iifname $MGMT_LAN tcp dport 53 ct state new accept
                 iifname $LAN tcp dport 53 ct state new accept
                 iifname $SRV_LAN tcp dport 53 ct state new accept
+
+                # Accept materia BGP only from the Kubernetes node on the server LAN.
+                iifname $SRV_LAN ip saddr ${materiaBgpPeerV4} tcp dport 179 ct state new accept
             }
 
             chain forward {
