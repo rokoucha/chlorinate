@@ -17,6 +17,11 @@ let
   itscomV4 = "172.16.254.10";
   itscomPublicV4 = "175.177.69.46";
   staticNaptServerV4 = "172.16.2.21";
+  materiaRouterASN = 64512;
+  materiaClusterASN = 64513;
+  materiaBgpPeerV4 = staticNaptServerV4;
+  materiaLbIPv4Pool = "172.16.2.64/27";
+  materiaLbIPv6Pool = "2404:9200:225:103::/112";
 
   lanDhcpServerConfig = router: {
     PoolOffset = 100;
@@ -123,6 +128,47 @@ in
         }
       '';
     };
+  };
+
+  services.frr = {
+    bgpd.enable = true;
+    config = ''
+      ip prefix-list MATERIA-LB-V4 seq 10 permit ${materiaLbIPv4Pool} ge 32 le 32
+      ipv6 prefix-list MATERIA-LB-V6 seq 10 permit ${materiaLbIPv6Pool} ge 128 le 128
+
+      route-map MATERIA-LB-V4-IN permit 10
+       match ip address prefix-list MATERIA-LB-V4
+      exit
+      route-map MATERIA-LB-V4-IN deny 100
+      exit
+
+      route-map MATERIA-LB-V6-IN permit 10
+       match ipv6 address prefix-list MATERIA-LB-V6
+      exit
+      route-map MATERIA-LB-V6-IN deny 100
+      exit
+
+      route-map MATERIA-LB-OUT deny 100
+      exit
+
+      router bgp ${toString materiaRouterASN}
+       bgp router-id 172.16.2.1
+       neighbor ${materiaBgpPeerV4} remote-as ${toString materiaClusterASN}
+       neighbor ${materiaBgpPeerV4} description materia-srv-lan
+       neighbor ${materiaBgpPeerV4} update-source 172.16.2.1
+       !
+       address-family ipv4 unicast
+        neighbor ${materiaBgpPeerV4} activate
+        neighbor ${materiaBgpPeerV4} route-map MATERIA-LB-V4-IN in
+        neighbor ${materiaBgpPeerV4} route-map MATERIA-LB-OUT out
+       exit-address-family
+       !
+       address-family ipv6 unicast
+        neighbor ${materiaBgpPeerV4} activate
+        neighbor ${materiaBgpPeerV4} route-map MATERIA-LB-V6-IN in
+        neighbor ${materiaBgpPeerV4} route-map MATERIA-LB-OUT out
+       exit-address-family
+    '';
   };
 
   services.dnsmasq = {
