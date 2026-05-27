@@ -16,15 +16,11 @@
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
       # renovate: datasource=github-release-attachments depName=rokoucha/mape-tool versioning=regex:^(?<major>\d{8})\.(?<minor>\d{6})$
-      mapeToolVersion = "20260527.223957";
-      mapeToolHash = "a1d38b20f8136fc410b68b0fa9c2fb60c817a0cf5dabacb64ce49ec8b8168083";
+      mapeToolVersion = "20260527.230833";
+      mapeToolHash = "195217920b900e82475200077e8918b5e5228dffb294120e91bff6e62c8235ea";
       mapeTool = pkgs.stdenvNoCC.mkDerivation {
         pname = "mape-tool";
         version = mapeToolVersion;
-
-        nativeBuildInputs = [
-          pkgs.patchelf
-        ];
 
         src = pkgs.fetchurl {
           url = "https://github.com/rokoucha/mape-tool/releases/download/${mapeToolVersion}/mape-tool-linux-amd64";
@@ -35,10 +31,6 @@
 
         installPhase = ''
           install -Dm755 "$src" "$out/bin/mape-tool"
-          patchelf \
-            --set-interpreter "${pkgs.stdenv.cc.bintools.dynamicLinker}" \
-            --set-rpath "${pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]}" \
-            "$out/bin/mape-tool"
         '';
       };
     in
