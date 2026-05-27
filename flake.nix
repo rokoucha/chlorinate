@@ -22,6 +22,10 @@
         pname = "mape-tool";
         version = mapeToolVersion;
 
+        nativeBuildInputs = [
+          pkgs.patchelf
+        ];
+
         src = pkgs.fetchurl {
           url = "https://github.com/rokoucha/mape-tool/releases/download/${mapeToolVersion}/mape-tool-linux-amd64";
           hash = "sha256:${mapeToolHash}";
@@ -31,6 +35,10 @@
 
         installPhase = ''
           install -Dm755 "$src" "$out/bin/mape-tool"
+          patchelf \
+            --set-interpreter "${pkgs.stdenv.cc.bintools.dynamicLinker}" \
+            --set-rpath "${pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]}" \
+            "$out/bin/mape-tool"
         '';
       };
     in
