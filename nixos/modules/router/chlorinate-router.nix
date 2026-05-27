@@ -13,10 +13,12 @@ let
   serverLanIf = "enp5s0f1.20";
   itscomIf = "enp5s0f1.200";
   mapeIf = "mape0";
+  tailscaleIf = "tailscale0";
 
   itscomV4 = "172.16.254.10";
   itscomPublicV4 = "175.177.69.46";
   staticNaptServerV4 = "172.16.2.21";
+  tailnetV4 = "100.64.0.0/10";
   materiaRouterASN = 64512;
   materiaClusterASN = 64513;
   materiaBgpPeerV4 = staticNaptServerV4;
@@ -46,6 +48,7 @@ in
         define MGMT_LAN = ${mgmtLanIf}
         define LAN = ${homeLanIf}
         define TUN = ${mapeIf}
+        define TS = ${tailscaleIf}
 
         define SRV_LAN = ${serverLanIf}
         define ITSCOM = ${itscomIf}
@@ -63,6 +66,10 @@ in
                 # WAN control plane required for IPv6, DHCPv6-PD, and PMTU.
                 iifname $WAN meta nfproto ipv6 meta l4proto ipv6-icmp accept
                 iifname $WAN udp sport 547 udp dport 546 accept
+                iifname { $WAN, $TUN } udp dport 41641 accept
+
+                # Tailnet-side management and subnet-router traffic.
+                iifname $TS accept
 
                 # LAN-side management and infrastructure services.
                 iifname $MGMT_LAN meta l4proto ipv6-icmp accept
@@ -103,6 +110,8 @@ in
                 iifname $LAN oifname $SRV_LAN ct state new accept
 
                 iifname $LAN oifname $TUN ct state new accept
+                iifname $TS oifname $LAN ip daddr 172.16.1.0/24 ct state new accept
+                iifname $TS oifname $TUN meta nfproto ipv4 ct state new accept
                 iifname $SRV_LAN oifname $ITSCOM ct state new accept
                 iifname $SRV_LAN oifname $SRV_LAN ip daddr $STATIC_NAPT_SERVER_V4 ct state new accept
                 iifname $ITSCOM oifname $SRV_LAN ip daddr $STATIC_NAPT_SERVER_V4 ct state new accept
@@ -127,12 +136,19 @@ in
 
                 # Server LAN -> iTSCOM
                 oifname $ITSCOM ip saddr 172.16.2.0/24 snat to $ITSCOM_V4
+                oifname $LAN ip saddr ${tailnetV4} snat to 172.16.1.1
                 oifname $SRV_LAN ip saddr { 172.16.0.0/24, 172.16.1.0/24 } ip daddr $STATIC_NAPT_SERVER_V4 snat to 172.16.2.1
                 oifname $SRV_LAN ip saddr 172.16.2.0/24 ip daddr $STATIC_NAPT_SERVER_V4 snat to 172.16.2.1
             }
         }
       '';
     };
+  };
+
+  services.tailscale = {
+    enable = true;
+    openFirewall = false;
+    useRoutingFeatures = "server";
   };
 
   services.frr = {
@@ -195,6 +211,10 @@ in
       ];
     };
   };
+
+  environment.systemPackages = [
+    pkgs.tailscale
+  ];
 
   boot = {
     kernelModules = [
