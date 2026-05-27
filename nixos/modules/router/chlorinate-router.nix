@@ -279,7 +279,7 @@ in
     ];
     wants = [ "network-online.target" ];
     partOf = [ "systemd-networkd.service" "nftables.service" ];
-    restartTriggers = [ config.environment.etc."nftables.conf".source ];
+    restartTriggers = [ (pkgs.writeText "nftables-ruleset" config.networking.nftables.ruleset) ];
     path = [
       pkgs.nftables
     ];
@@ -356,6 +356,7 @@ in
           IPv6AcceptRA=yes
           IPv6PrivacyExtensions=no
           DHCPPrefixDelegation=yes
+          Domains=~.
 
           [DHCPv6]
           DUIDType=link-layer
