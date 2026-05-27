@@ -34,7 +34,7 @@
   "packageRules": [
     {
       "matchManagers": ["nix"],
-      "matchDepNames": ["NixOS/nixpkgs"],
+      "matchDepNames": ["nixpkgs"],
       "enabled": false
     }
   ]
