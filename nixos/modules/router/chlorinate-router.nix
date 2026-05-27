@@ -68,8 +68,12 @@ in
                 iifname $WAN udp sport 547 udp dport 546 accept
                 iifname { $WAN, $TUN } udp dport 41641 accept
 
-                # Tailnet-side management and subnet-router traffic.
-                iifname $TS accept
+                # Tailnet-side management and infrastructure services.
+                iifname $TS meta l4proto ipv6-icmp accept
+                iifname $TS ip protocol icmp accept
+                iifname $TS tcp dport 22 ct state new accept
+                iifname $TS udp dport 53 accept
+                iifname $TS tcp dport 53 ct state new accept
 
                 # LAN-side management and infrastructure services.
                 iifname $MGMT_LAN meta l4proto ipv6-icmp accept
@@ -147,7 +151,14 @@ in
 
   services.tailscale = {
     enable = true;
+    disableTaildrop = true;
     openFirewall = false;
+    extraSetFlags = [
+      "--advertise-exit-node"
+      "--advertise-routes=172.16.1.0/24"
+      "--accept-dns=false"
+      "--netfilter-mode=off"
+    ];
     useRoutingFeatures = "server";
   };
 
@@ -236,6 +247,7 @@ in
       "net.ipv4.tcp_congestion_control" = "bbr";
       "net.ipv4.conf.all.rp_filter" = 0;
       "net.ipv4.conf.default.rp_filter" = 0;
+      "net.ipv4.conf.${tailscaleIf}.rp_filter" = 0;
       "net.ipv4.conf.${serverLanIf}.rp_filter" = 0;
       "net.ipv4.conf.${itscomIf}.rp_filter" = 0;
       # Allow traffic hairpinned from the MAP-E address to the iTSCOM NAPT path.
