@@ -13,6 +13,6 @@
     }
   ],
   "nix": {
-    "enabled": true
+    "enabled": false
   }
 }
