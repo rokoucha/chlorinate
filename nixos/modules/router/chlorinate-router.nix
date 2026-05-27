@@ -1,5 +1,6 @@
 {
   lib,
+  config,
   pkgs,
   mape,
   ...
@@ -278,6 +279,7 @@ in
     ];
     wants = [ "network-online.target" ];
     partOf = [ "systemd-networkd.service" "nftables.service" ];
+    restartTriggers = [ config.environment.etc."nftables.conf".source ];
     path = [
       pkgs.nftables
     ];
