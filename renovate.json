@@ -15,6 +15,17 @@
       ],
       "datasourceTemplate": "github-release-attachments",
       "autoReplaceStringTemplate": "# renovate: datasource=github-release-attachments depName={{{depName}}} versioning={{{versioning}}}\n      mapeToolVersion = \"{{{newValue}}}\";\n      mapeToolHash = \"{{{newDigest}}}\";"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^flake\\.nix$/"],
+      "matchStrings": [
+        "nixpkgs\\.url = \"github:NixOS/nixpkgs/nixos-(?<currentValue>[^\"]+)\""
+      ],
+      "depNameTemplate": "NixOS/nixpkgs",
+      "datasourceTemplate": "github-tags",
+      "versioningTemplate": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)$",
+      "autoReplaceStringTemplate": "nixpkgs.url = \"github:NixOS/nixpkgs/nixos-{{{newValue}}}\""
     }
   ],
   "nix": {
