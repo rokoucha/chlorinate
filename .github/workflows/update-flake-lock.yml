@@ -11,9 +11,9 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: DeterminateSystems/determinate-nix-action@v3
-      - uses: DeterminateSystems/update-flake-lock@main
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: DeterminateSystems/determinate-nix-action@fd3eb131b9b46cc1dd978a7c0ba3fce79dd7d3eb # v3.9.1
+      - uses: DeterminateSystems/update-flake-lock@b044cabb7988ec21289924a967891203e5630b2d # v9
         with:
           pr-title: "chore: update flake.lock"
           pr-labels: |
