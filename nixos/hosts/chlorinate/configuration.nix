@@ -2,7 +2,7 @@
   config,
   lib,
   pkgs,
-  mape,
+  mapeTool,
   ...
 }:
 
@@ -65,7 +65,6 @@
   };
 
   environment.systemPackages = with pkgs; [
-    mape
     conntrack-tools
     ethtool
     git
@@ -79,6 +78,7 @@
     tree
     vim
     wget
+    mapeTool
   ];
 
   nix.settings.experimental-features = [

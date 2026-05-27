@@ -2,7 +2,7 @@
   lib,
   config,
   pkgs,
-  mape,
+  mapeTool,
   ...
 }:
 
@@ -264,12 +264,12 @@ in
       script = ''
         #!/bin/sh
         [ "$IFACE" = "${wanIf}" ] || exit 0
-        exec systemctl restart mape-config
+        exec systemctl restart mape-tool
       '';
     };
   };
 
-  systemd.services.mape-config = {
+  systemd.services.mape-tool = {
     description = "MAP-E tunnel and nftables configuration";
     after = [
       "sys-subsystem-net-devices-${wanIf}.device"
@@ -286,7 +286,7 @@ in
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      ExecStart = "${mape}/bin/mape apply";
+      ExecStart = "${mapeTool}/bin/mape-tool apply";
       Restart = "on-failure";
       RestartSec = "5s";
       StartLimitIntervalSec = 0;

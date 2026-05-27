@@ -1,6 +1,17 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended", ":dependencyDashboard"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^flake\\.nix$/"],
+      "matchStrings": [
+        "# renovate: datasource=github-release-attachments depName=(?<depName>\\S+) versioning=(?<versioning>\\S+)\\s+mapeToolVersion = \"(?<currentValue>[^\"]+)\";\\s+mapeToolHash = \"(?<currentDigest>[a-f0-9]+)\";"
+      ],
+      "datasourceTemplate": "github-release-attachments",
+      "autoReplaceStringTemplate": "# renovate: datasource=github-release-attachments depName={{{depName}}} versioning={{{versioning}}}\n      mapeToolVersion = \"{{{newValue}}}\";\n      mapeToolHash = \"{{{newDigest}}}\";"
+    }
+  ],
   "nix": {
     "enabled": true
   }

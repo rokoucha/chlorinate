@@ -15,17 +15,35 @@
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
-      mape = (pkgs.buildGoModule.override { go = pkgs.go_1_26; }) {
-        pname = "mape";
-        version = "0.1.0";
-        src = ./mape;
-        vendorHash = "sha256-hdtuCCbnl2BpVm+JgREGp5dPM/RctypjurtoNidx5s0=";
+      # renovate: datasource=github-release-attachments depName=rokoucha/mape-tool versioning=regex:^(?<major>\d{8})\.(?<minor>\d{6})$
+      mapeToolVersion = "20260527.223957";
+      mapeToolHash = "a1d38b20f8136fc410b68b0fa9c2fb60c817a0cf5dabacb64ce49ec8b8168083";
+      mapeTool = pkgs.stdenvNoCC.mkDerivation {
+        pname = "mape-tool";
+        version = mapeToolVersion;
+
+        src = pkgs.fetchurl {
+          url = "https://github.com/rokoucha/mape-tool/releases/download/${mapeToolVersion}/mape-tool-linux-amd64";
+          hash = "sha256:${mapeToolHash}";
+        };
+
+        dontUnpack = true;
+
+        installPhase = ''
+          install -Dm755 "$src" "$out/bin/mape-tool"
+        '';
       };
     in
     {
-      packages.${system}.mape = mape;
+      packages.${system} = {
+        mape-tool = mapeTool;
+        mape = mapeTool;
+      };
 
-      checks.${system}.mape = mape;
+      checks.${system} = {
+        mape-tool = mapeTool;
+        mape = mapeTool;
+      };
 
       nixosConfigurations.chlorinate = nixpkgs.lib.nixosSystem {
         inherit system;
@@ -34,7 +52,7 @@
           ./nixos/hosts/chlorinate/configuration.nix
           { nixpkgs.pkgs = pkgs; }
         ];
-        specialArgs = { inherit mape; };
+        specialArgs = { inherit mapeTool; };
       };
     };
 }
