@@ -27,16 +27,15 @@
       "versioningTemplate": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)$",
       "autoReplaceStringTemplate": "nixpkgs.url = \"github:NixOS/nixpkgs/nixos-{{{newValue}}}\""
     },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^flake\\.nix$/"],
-      "matchStrings": [
-        "url = \"github:(?<depName>[^\"]+)/(?<currentValue>v?[0-9][^\"]*)\""
-      ],
-      "datasourceTemplate": "github-tags"
-    }
   ],
   "nix": {
-    "enabled": false
-  }
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "matchManagers": ["nix"],
+      "matchDepNames": ["nixpkgs"],
+      "enabled": false
+    }
+  ]
 }
