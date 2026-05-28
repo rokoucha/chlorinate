@@ -100,7 +100,7 @@ in
     group = "deploy";
     shell = pkgs.bash;
     openssh.authorizedKeys.keys = [
-      "command=\"sudo /run/current-system/sw/bin/nixos-deploy\",no-port-forwarding,no-agent-forwarding,no-X11-forwarding,no-pty ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBpZ/5M26R8aw9Kva6yzg34I/hoArTyQ4Po5Q2IHR6q/ chlorinate-ci"
+      "command=\"sudo /run/current-system/sw/bin/nixos-deploy\",no-port-forwarding,no-agent-forwarding,no-X11-forwarding,no-pty ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIP1Bjc5BT+NhkVF0z+Cz7abnTOf3VmRUyzKokN4ToY0b chlorinate-cd"
     ];
   };
 
