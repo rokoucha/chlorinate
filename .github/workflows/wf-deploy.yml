@@ -34,6 +34,8 @@ jobs:
 
           cloudflared access tcp \
             --hostname ${{ vars.ROUTER_CF_HOSTNAME }} \
+            --id "${CF_ACCESS_CLIENT_ID}" \
+            --secret "${CF_ACCESS_CLIENT_SECRET}" \
             --url localhost:2222 &
           CF_PID=$!
           until bash -c '</dev/tcp/localhost/2222' 2>/dev/null; do sleep 0.1; done
