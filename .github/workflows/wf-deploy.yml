@@ -35,5 +35,5 @@ jobs:
             -i /tmp/deploy_key \
             -o StrictHostKeyChecking=no \
             -o BatchMode=yes \
-            -o "ProxyCommand=cloudflared access ssh --hostname %h" \
+            -o "ProxyCommand=cloudflared access ssh --hostname %h --id ${CF_ACCESS_CLIENT_ID} --secret ${CF_ACCESS_CLIENT_SECRET}" \
             deploy@${{ vars.ROUTER_CF_HOSTNAME }}
