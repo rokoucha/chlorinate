@@ -15,3 +15,4 @@ jobs:
   deploy:
     needs: [ci]
     uses: ./.github/workflows/wf-deploy.yml
+    secrets: inherit
