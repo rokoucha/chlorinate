@@ -163,16 +163,14 @@ in
     useRoutingFeatures = "server";
   };
 
-  # TODO: fill in TUNNEL_UUID after running: cloudflared tunnel create chlorinate
-  # TODO: fill in ROUTER_CF_HOSTNAME after setting up Cloudflare Zero Trust Access
   services.cloudflared = {
     enable = true;
     tunnels = {
-      "TUNNEL_UUID" = {
-        credentialsFile = "/var/lib/cloudflared/TUNNEL_UUID.json";
+      "54c4d022-c007-4ca3-943e-8b7bc57e70d4" = {
+        credentialsFile = "/var/lib/cloudflared/54c4d022-c007-4ca3-943e-8b7bc57e70d4.json";
         default = "http_status:404";
         ingress = {
-          "ROUTER_CF_HOSTNAME" = {
+          "chlorine.dns.ggrel.net" = {
             service = "ssh://localhost:22";
           };
         };
