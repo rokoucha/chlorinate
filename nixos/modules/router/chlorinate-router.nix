@@ -171,7 +171,7 @@ in
         default = "http_status:404";
         ingress = {
           "chlorinate.ggrel.net" = {
-            service = "tcp://localhost:22";
+            service = "ssh://localhost:22";
           };
         };
       };
