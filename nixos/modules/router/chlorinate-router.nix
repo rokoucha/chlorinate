@@ -240,6 +240,7 @@ in
   };
 
   environment.systemPackages = [
+    pkgs.cloudflared
     pkgs.tailscale
   ];
 
