@@ -1,10 +1,7 @@
-name: CI
+name: Nix CI
 
 on:
-  pull_request:
-  push:
-    branches:
-      - main
+  workflow_call:
 
 permissions:
   contents: read

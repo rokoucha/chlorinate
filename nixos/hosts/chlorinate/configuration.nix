@@ -6,6 +6,14 @@
   ...
 }:
 
+let
+  nixosDeployScript = pkgs.writeShellScriptBin "nixos-deploy" ''
+    exec /run/current-system/sw/bin/nixos-rebuild switch \
+      --flake github:rokoucha/chlorinate#chlorinate \
+      --refresh \
+      --log-format multiline
+  '';
+in
 {
   imports = [
     ./hardware-configuration.nix
@@ -79,6 +87,7 @@
     vim
     wget
     mapeTool
+    nixosDeployScript
   ];
 
   nix.settings.experimental-features = [
@@ -86,15 +95,28 @@
     "flakes"
   ];
 
-  system.autoUpgrade = {
-    enable = true;
-    flake = "github:rokoucha/chlorinate#chlorinate";
-    flags = [ "--refresh" ];
-    dates = "hourly";
-    randomizedDelaySec = "15min";
-    operation = "switch";
-    allowReboot = false;
+  users.users.deploy = {
+    isSystemUser = true;
+    group = "deploy";
+    shell = pkgs.bash;
+    openssh.authorizedKeys.keys = [
+      "command=\"sudo /run/current-system/sw/bin/nixos-deploy\",no-port-forwarding,no-agent-forwarding,no-X11-forwarding,no-pty ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBpZ/5M26R8aw9Kva6yzg34I/hoArTyQ4Po5Q2IHR6q/ chlorinate-ci"
+    ];
   };
+
+  users.groups.deploy = { };
+
+  security.sudo.extraRules = [
+    {
+      users = [ "deploy" ];
+      commands = [
+        {
+          command = "/run/current-system/sw/bin/nixos-deploy";
+          options = [ "NOPASSWD" ];
+        }
+      ];
+    }
+  ];
 
   boot = {
     loader = {

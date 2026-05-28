@@ -159,6 +159,7 @@ in
       "--advertise-routes=172.16.1.0/24"
       "--accept-dns=false"
       "--netfilter-mode=off"
+      "--advertise-tags=tag:chlorinate"
     ];
     useRoutingFeatures = "server";
   };
