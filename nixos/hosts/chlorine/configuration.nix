@@ -9,7 +9,7 @@
 let
   nixosDeployScript = pkgs.writeShellScriptBin "nixos-deploy" ''
     exec /run/current-system/sw/bin/nixos-rebuild switch \
-      --flake github:rokoucha/chlorinate#chlorinate \
+      --flake github:rokoucha/chlorinate#chlorine \
       --refresh
   '';
 in

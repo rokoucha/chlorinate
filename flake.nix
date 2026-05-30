@@ -45,11 +45,11 @@
         mape = mapeTool;
       };
 
-      nixosConfigurations.chlorinate = nixpkgs.lib.nixosSystem {
+      nixosConfigurations.chlorine = nixpkgs.lib.nixosSystem {
         inherit system;
         modules = [
           lanzaboote.nixosModules.lanzaboote
-          ./nixos/hosts/chlorinate/configuration.nix
+          ./nixos/hosts/chlorine/configuration.nix
           { nixpkgs.pkgs = pkgs; }
         ];
         specialArgs = { inherit mapeTool; };
