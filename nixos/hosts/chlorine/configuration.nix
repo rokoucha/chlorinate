@@ -16,7 +16,7 @@ in
 {
   imports = [
     ./hardware-configuration.nix
-    ../../modules/router/chlorinate-router.nix
+    ../../modules/router
   ];
 
   networking.hostName = "chlorine";
