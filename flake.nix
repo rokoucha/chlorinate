@@ -2,7 +2,7 @@
   description = "自家製ルーター";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
 
     lanzaboote = {
       url = "github:nix-community/lanzaboote/v1.0.0";
