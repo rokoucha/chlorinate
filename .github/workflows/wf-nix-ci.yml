@@ -21,8 +21,5 @@ jobs:
       - name: Check flake
         run: nix flake check --all-systems --no-build
 
-      - name: Build mape
-        run: nix build .#packages.x86_64-linux.mape
-
       - name: Build chlorine system
         run: nix build .#nixosConfigurations.chlorine.config.system.build.toplevel

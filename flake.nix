@@ -40,11 +40,6 @@
         mape = mapeTool;
       };
 
-      checks.${system} = {
-        mape-tool = mapeTool;
-        mape = mapeTool;
-      };
-
       nixosConfigurations.chlorine = nixpkgs.lib.nixosSystem {
         inherit system;
         modules = [
