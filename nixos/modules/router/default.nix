@@ -8,6 +8,7 @@
     ./home.nix
     ./server.nix
     ./cloudflared.nix
+    ./cloudflare-ddns.nix
   ];
 
   systemd.network = {
