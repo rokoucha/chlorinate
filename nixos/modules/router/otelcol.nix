@@ -47,15 +47,15 @@ in
         batch = { };
       };
 
-      exporters.otlp = {
-        endpoint = "otel.ggrel.net:443";
+      exporters.otlphttp = {
+        endpoint = "https://otel.ggrel.net";
         headers.Authorization = "Bearer \${env:OTLP_TOKEN}";
       };
 
       service.pipelines.metrics = {
         receivers = [ "prometheus" "prometheus/self" ];
         processors = [ "memory_limiter" "batch" ];
-        exporters = [ "otlp" ];
+        exporters = [ "otlphttp" ];
       };
     };
   };
