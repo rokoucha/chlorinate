@@ -9,6 +9,7 @@
     ./server.nix
     ./cloudflared.nix
     ./cloudflare-ddns.nix
+    ./apcupsd.nix
   ];
 
   systemd.network = {

@@ -67,6 +67,7 @@ in
                 iifname $MGMT_LAN tcp dport 22 ct state new accept
                 iifname $LAN tcp dport 22 ct state new accept
                 iifname $SRV_LAN tcp dport 22 ct state new accept
+                iifname $SRV_LAN tcp dport 3551 ct state new accept
 
                 iifname $MGMT_LAN udp dport { 53, 67 } accept
                 iifname $LAN udp dport { 53, 67 } accept
