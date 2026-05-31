@@ -10,6 +10,8 @@
     ./cloudflared.nix
     ./cloudflare-ddns.nix
     ./apcupsd.nix
+    ./blackbox.nix
+    ./otelcol.nix
   ];
 
   systemd.network = {
@@ -25,6 +27,7 @@
     serverLanIf = "enp5s0f1.20";
     itscomIf = "enp5s0f1.200";
     mapeIf = "mape0";
+    mapeBrV6 = "2404:9200:225:100::64";
     tailscaleIf = "tailscale0";
     itscomV4 = "172.16.254.10";
     itscomPublicV4 = "175.177.69.46";

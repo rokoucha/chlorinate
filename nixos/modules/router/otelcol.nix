@@ -1,0 +1,66 @@
+{ pkgs, routerConst, ... }:
+let
+  inherit (routerConst) mapeBrV6;
+  blackboxAddr = "127.0.0.1:9115";
+
+  blackboxRelabel = [
+    { source_labels = [ "__address__" ]; target_label = "__param_target"; }
+    { source_labels = [ "__param_target" ]; target_label = "instance"; }
+    { target_label = "__address__"; replacement = blackboxAddr; }
+  ];
+
+  mkJob = { name, module, targets }: {
+    job_name = name;
+    metrics_path = "/probe";
+    params.module = [ module ];
+    static_configs = [{ inherit targets; }];
+    relabel_configs = blackboxRelabel;
+  };
+in
+{
+  services.opentelemetry-collector = {
+    enable = true;
+    package = pkgs.opentelemetry-collector-contrib;
+    settings = {
+      "receivers"."prometheus/self".config.scrape_configs = [
+        {
+          job_name = "opentelemetry-collector";
+          scrape_interval = "10s";
+          static_configs = [{ targets = [ "0.0.0.0:8888" ]; }];
+        }
+      ];
+
+      receivers.prometheus.config.scrape_configs = [
+        (mkJob { name = "ping_v4_mape";   module = "icmp_v4";        targets = [ "1.1.1.1" "8.8.8.8" ]; })
+        (mkJob { name = "ping_v4_itscom"; module = "icmp_v4_itscom"; targets = [ "1.1.1.1" "8.8.8.8" ]; })
+        (mkJob { name = "ping_v6";        module = "icmp_v6";        targets = [ "2606:4700:4700::1111" "2001:4860:4860::8888" ]; })
+        (mkJob { name = "ping_mape_br";   module = "icmp_v6_br";     targets = [ mapeBrV6 ]; })
+        (mkJob { name = "http_v6_flets";  module = "http_v6";        targets = [ "http://www1.syutoken-speed.flets-east.jp" ]; })
+      ];
+
+      processors = {
+        memory_limiter = {
+          check_interval = "1s";
+          limit_mib = 256;
+          spike_limit_mib = 64;
+        };
+        batch = { };
+      };
+
+      exporters.otlp = {
+        endpoint = "https://otel.ggrel.net";
+        headers.Authorization = "Bearer \${env:OTLP_TOKEN}";
+      };
+
+      service.pipelines.metrics = {
+        receivers = [ "prometheus" "prometheus/self" ];
+        processors = [ "memory_limiter" "batch" ];
+        exporters = [ "otlp" ];
+      };
+    };
+  };
+
+  systemd.services.opentelemetry-collector.serviceConfig.EnvironmentFile =
+    "/var/lib/otelcol/env";
+
+}
