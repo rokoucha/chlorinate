@@ -48,7 +48,7 @@ in
       };
 
       exporters.otlp = {
-        endpoint = "https://otel.ggrel.net";
+        endpoint = "otel.ggrel.net:443";
         headers.Authorization = "Bearer \${env:OTLP_TOKEN}";
       };
 
