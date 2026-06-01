@@ -1,4 +1,4 @@
-{ pkgs, routerConst, ... }:
+{ otelcol, routerConst, ... }:
 let
   inherit (routerConst) mapeBrV6;
   blackboxAddr = "127.0.0.1:9115";
@@ -20,7 +20,7 @@ in
 {
   services.opentelemetry-collector = {
     enable = true;
-    package = pkgs.opentelemetry-collector-contrib;
+    package = otelcol;
     settings = {
       "receivers"."prometheus/self".config.scrape_configs = [
         {
@@ -47,6 +47,9 @@ in
           limit_mib = 256;
           spike_limit_mib = 64;
         };
+        resourcedetection = {
+          detectors = [ "system" ];
+        };
         batch = { };
       };
 
@@ -57,7 +60,7 @@ in
 
       service.pipelines.metrics = {
         receivers = [ "prometheus" "prometheus/self" ];
-        processors = [ "memory_limiter" "batch" ];
+        processors = [ "memory_limiter" "resourcedetection" "batch" ];
         exporters = [ "otlphttp" ];
       };
     };

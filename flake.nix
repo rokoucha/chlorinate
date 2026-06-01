@@ -17,11 +17,13 @@
       pkgs = nixpkgs.legacyPackages.${system};
       mapeTool = pkgs.callPackage ./pkgs/mape-tool.nix { };
       cloudflareDdns = pkgs.callPackage ./pkgs/cloudflare-ddns.nix { };
+      otelcol = pkgs.callPackage ./pkgs/otelcol.nix { };
     in
     {
       packages.${system} = {
         mape-tool = mapeTool;
         cloudflare-ddns = cloudflareDdns;
+        inherit otelcol;
       };
 
       nixosConfigurations.chlorine = nixpkgs.lib.nixosSystem {
@@ -31,7 +33,7 @@
           ./nixos/hosts/chlorine/configuration.nix
           { nixpkgs.pkgs = pkgs; }
         ];
-        specialArgs = { inherit mapeTool cloudflareDdns; };
+        specialArgs = { inherit mapeTool cloudflareDdns otelcol; };
       };
     };
 }
