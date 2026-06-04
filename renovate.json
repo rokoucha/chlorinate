@@ -9,11 +9,19 @@
   "customManagers": [
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^pkgs\\/.*\\.nix$/"],
+      "managerFilePatterns": ["/^pkgs\\/mape-tool\\.nix$/"],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>github-release-attachments) depName=(?<depName>\\S+) versioning=(?<versioning>\\S+)\\s+version = \"(?<currentValue>[^\"]+)\";(?<packageBody>[\\s\\S]*?src = fetchurl \\{[\\s\\S]*?hash = \"sha256:)(?<currentDigest>[a-f0-9]+)(?<packageTail>\";)"
+        "# renovate: datasource=(?<datasource>github-release-attachments) depName=(?<depName>rokoucha/mape-tool) versioning=(?<versioning>\\S+)\\s+version = \"(?<currentValue>[^\"]+)\";[\\s\\S]*?hash = \"sha256:(?<currentDigest>[a-f0-9]+)\";"
       ],
-      "autoReplaceStringTemplate": "# renovate: datasource={{{datasource}}} depName={{{depName}}} versioning={{{versioning}}}\n  version = \"{{{newValue}}}\";{{{packageBody}}}{{{newDigest}}}{{{packageTail}}}"
+      "autoReplaceStringTemplate": "# renovate: datasource={{{datasource}}} depName={{{depName}}} versioning={{{versioning}}}\n  version = \"{{{newValue}}}\";\nin\nstdenvNoCC.mkDerivation {\n  pname = \"mape-tool\";\n  inherit version;\n\n  src = fetchurl {\n    url = \"https://github.com/rokoucha/mape-tool/releases/download/${version}/mape-tool-linux-amd64\";\n    hash = \"sha256:{{{newDigest}}}\";"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^pkgs\\/otelcol\\.nix$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>github-release-attachments) depName=(?<depName>rokoucha/container-images) versioning=(?<versioning>\\S+)\\s+version = \"(?<currentValue>[^\"]+)\";\\s+sourceBinaryName = \"otelcol-chlorine-linux-amd64\";[\\s\\S]*?hash = \"sha256:(?<currentDigest>[a-f0-9]+)\";"
+      ],
+      "autoReplaceStringTemplate": "# renovate: datasource={{{datasource}}} depName={{{depName}}} versioning={{{versioning}}}\n  version = \"{{{newValue}}}\";\n  sourceBinaryName = \"otelcol-chlorine-linux-amd64\";\nin\nstdenvNoCC.mkDerivation {\n  pname = \"otelcol\";\n  inherit version;\n\n  src = fetchurl {\n    url = \"https://github.com/rokoucha/container-images/releases/download/${version}/${sourceBinaryName}.tar.gz\";\n    hash = \"sha256:{{{newDigest}}}\";"
     },
     {
       "customType": "regex",
