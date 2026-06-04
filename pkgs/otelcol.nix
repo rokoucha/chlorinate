@@ -4,7 +4,7 @@
 }:
 let
   # renovate: datasource=github-release-attachments depName=rokoucha/container-images versioning=regex:^(?<major>\d{8})\.(?<minor>\d{6})$
-  version = "20260604.204601";
+  version = "20260604.221506";
   sourceBinaryName = "otelcol-chlorine-linux-amd64";
 in
 stdenvNoCC.mkDerivation {
@@ -13,7 +13,7 @@ stdenvNoCC.mkDerivation {
 
   src = fetchurl {
     url = "https://github.com/rokoucha/container-images/releases/download/${version}/${sourceBinaryName}.tar.gz";
-    hash = "sha256:bd57c51f6df17d073990a84bcb85b25a607071fa8075b8355284fc8314233be1";
+    hash = "sha256:541ee146fce46ac440d94ddf5b8e5dbf070d68f40cd0a5faf8bd4dac1c772b41";
   };
 
   unpackPhase = ''
