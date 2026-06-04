@@ -11,7 +11,7 @@
       "customType": "regex",
       "managerFilePatterns": ["/^pkgs\\/.*\\.nix$/"],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>github-release-attachments) depName=(?<depName>\\S+) versioning=(?<versioning>\\S+)\\s+version = \"(?<currentValue>[^\"]+)\";(?<packageBody>[\\s\\S]*?src = fetchurl \\{[\\s\\S]*?hash = \")(?<currentDigest>sha256(?::[a-f0-9]+|-[A-Za-z0-9+/=]+))(?<packageTail>\";)"
+        "# renovate: datasource=(?<datasource>github-release-attachments) depName=(?<depName>\\S+) versioning=(?<versioning>\\S+)\\s+version = \"(?<currentValue>[^\"]+)\";(?<packageBody>[\\s\\S]*?src = fetchurl \\{[\\s\\S]*?hash = \"sha256:)(?<currentDigest>[a-f0-9]+)(?<packageTail>\";)"
       ],
       "autoReplaceStringTemplate": "# renovate: datasource={{{datasource}}} depName={{{depName}}} versioning={{{versioning}}}\n  version = \"{{{newValue}}}\";{{{packageBody}}}{{{newDigest}}}{{{packageTail}}}"
     },
