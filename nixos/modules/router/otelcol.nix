@@ -1,4 +1,4 @@
-{ otelcol, routerConst, ... }:
+{ otelcol, routerConst, pkgs, ... }:
 let
   inherit (routerConst) mapeBrV6;
   blackboxAddr = "127.0.0.1:9115";
@@ -29,6 +29,10 @@ in
           static_configs = [{ targets = [ "0.0.0.0:8888" ]; }];
         }
       ];
+
+      receivers.journald = {
+        priority = "info";
+      };
 
       receivers.prometheus.config = {
         global.scrape_interval = "30s";
@@ -63,10 +67,19 @@ in
         processors = [ "memory_limiter" "resourcedetection" "batch" ];
         exporters = [ "otlphttp" ];
       };
+
+      service.pipelines.logs = {
+        receivers = [ "journald" ];
+        processors = [ "memory_limiter" "resourcedetection" "batch" ];
+        exporters = [ "otlphttp" ];
+      };
     };
   };
 
-  systemd.services.opentelemetry-collector.serviceConfig.EnvironmentFile =
-    "/var/lib/otelcol/env";
+  systemd.services.opentelemetry-collector.serviceConfig = {
+    EnvironmentFile = "/var/lib/otelcol/env";
+    # journald receiver shells out to journalctl.
+    Path = [ "${pkgs.systemd}/bin" ];
+  };
 
 }
