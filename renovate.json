@@ -9,12 +9,11 @@
   "customManagers": [
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^flake\\.nix$/"],
+      "managerFilePatterns": ["/^pkgs\\/.*\\.nix$/"],
       "matchStrings": [
-        "# renovate: datasource=github-release-attachments depName=(?<depName>\\S+) versioning=(?<versioning>\\S+)\\s+mapeToolVersion = \"(?<currentValue>[^\"]+)\";\\s+mapeToolHash = \"(?<currentDigest>[a-f0-9]+)\";"
+        "# renovate: datasource=(?<datasource>github-release-attachments) depName=(?<depName>\\S+) versioning=(?<versioning>\\S+)\\s+version = \"(?<currentValue>[^\"]+)\";(?<packageBody>[\\s\\S]*?src = fetchurl \\{[\\s\\S]*?hash = \")(?<currentDigest>sha256(?::[a-f0-9]+|-[A-Za-z0-9+/=]+))(?<packageTail>\";)"
       ],
-      "datasourceTemplate": "github-release-attachments",
-      "autoReplaceStringTemplate": "# renovate: datasource=github-release-attachments depName={{{depName}}} versioning={{{versioning}}}\n      mapeToolVersion = \"{{{newValue}}}\";\n      mapeToolHash = \"{{{newDigest}}}\";"
+      "autoReplaceStringTemplate": "# renovate: datasource={{{datasource}}} depName={{{depName}}} versioning={{{versioning}}}\n  version = \"{{{newValue}}}\";{{{packageBody}}}{{{newDigest}}}{{{packageTail}}}"
     },
     {
       "customType": "regex",

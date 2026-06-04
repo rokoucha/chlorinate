@@ -13,7 +13,7 @@ stdenvNoCC.mkDerivation {
 
   src = fetchurl {
     url = "https://github.com/rokoucha/container-images/releases/download/${version}/${sourceBinaryName}.tar.gz";
-    hash = "sha256-EkVTWE4SMjhdFqxVbVn0M/k4r8Y4ryQdpJk5h/C0D3g=";
+    hash = "sha256:124553584e1232385d16ac556d59f433f938afc638af241da4993987f0b40f78";
   };
 
   unpackPhase = ''
