@@ -57,7 +57,7 @@ in
         resource = {
           attributes = [{
             key = "service.name";
-            value = "router";
+            value = "chlorinate";
             action = "upsert";
           }];
         };
