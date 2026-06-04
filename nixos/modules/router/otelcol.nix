@@ -54,6 +54,13 @@ in
         resourcedetection = {
           detectors = [ "system" ];
         };
+        resource = {
+          attributes = [{
+            key = "service.name";
+            value = "router";
+            action = "upsert";
+          }];
+        };
         batch = { };
       };
 
@@ -64,13 +71,13 @@ in
 
       service.pipelines.metrics = {
         receivers = [ "prometheus" "prometheus/self" ];
-        processors = [ "memory_limiter" "resourcedetection" "batch" ];
+        processors = [ "memory_limiter" "resourcedetection" "resource" "batch" ];
         exporters = [ "otlphttp" ];
       };
 
       service.pipelines.logs = {
         receivers = [ "journald" ];
-        processors = [ "memory_limiter" "resourcedetection" "batch" ];
+        processors = [ "memory_limiter" "resourcedetection" "resource" "batch" ];
         exporters = [ "otlphttp" ];
       };
     };
