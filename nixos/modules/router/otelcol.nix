@@ -42,6 +42,11 @@ in
         (mkJob { name = "ping_v6";        module = "icmp_v6";        targets = [ "2606:4700:4700::1111" "2001:4860:4860::8888" ]; })
         (mkJob { name = "ping_mape_br";   module = "icmp_v6_br";     targets = [ mapeBrV6 ]; })
         (mkJob { name = "http_v6_flets";  module = "http_v6";        targets = [ "http://www1.speed-test.flets-east.jp" ]; })
+        {
+          job_name = "node";
+          scrape_interval = "30s";
+          static_configs = [{ targets = [ "127.0.0.1:9100" ]; }];
+        }
         ];
       };
 
