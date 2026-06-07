@@ -4,7 +4,7 @@
 }:
 let
   # renovate: datasource=github-release-attachments depName=rokoucha/mape-tool versioning=regex:^(?<major>\d{8})\.(?<minor>\d{6})$
-  version = "20260527.230833";
+  version = "20260607.083328";
 in
 stdenvNoCC.mkDerivation {
   pname = "mape-tool";
@@ -12,7 +12,7 @@ stdenvNoCC.mkDerivation {
 
   src = fetchurl {
     url = "https://github.com/rokoucha/mape-tool/releases/download/${version}/mape-tool-linux-amd64";
-    hash = "sha256:195217920b900e82475200077e8918b5e5228dffb294120e91bff6e62c8235ea";
+    hash = "sha256:8597a3ea9785342576cdcb7c48d31df02efea10b758de324decd7ca6b23fbcc5";
   };
 
   dontUnpack = true;
