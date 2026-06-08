@@ -51,16 +51,11 @@ in
       matchConfig.Name = materiaLanIf;
       networkConfig = {
         Address = "172.16.3.1/24";
-        IPv6SendRA = true;
         DHCPPrefixDelegation = true;
         IPv4Forwarding = true;
         IPv6Forwarding = true;
       };
       extraConfig = ''
-        [IPv6SendRA]
-        RouterLifetimeSec=1800
-        EmitDNS=no
-
         [DHCPPrefixDelegation]
         UplinkInterface=${wanIf}
         SubnetId=3
