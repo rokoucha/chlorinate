@@ -3,6 +3,7 @@ let
   inherit (routerConst)
     wanIf
     serverLanIf
+    materiaLanIf
     itscomIf
     itscomV4
     lanDhcpServerConfig
@@ -13,10 +14,7 @@ in
     "20-${serverLanIf}" = {
       matchConfig.Name = serverLanIf;
       networkConfig = {
-        Address = [
-          "172.16.2.1/24"
-          "172.16.3.1/24"
-        ];
+        Address = "172.16.2.1/24";
         DHCPServer = true;
         IPv6SendRA = true;
         DHCPPrefixDelegation = true;
@@ -46,7 +44,18 @@ in
         Announce=yes
         Assign=yes
         Token=eui64
+      '';
+    };
 
+    "20-${materiaLanIf}" = {
+      matchConfig.Name = materiaLanIf;
+      networkConfig = {
+        Address = "172.16.3.1/24";
+        DHCPPrefixDelegation = true;
+        IPv4Forwarding = true;
+        IPv6Forwarding = true;
+      };
+      extraConfig = ''
         [DHCPPrefixDelegation]
         UplinkInterface=${wanIf}
         SubnetId=3

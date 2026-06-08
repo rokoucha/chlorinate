@@ -26,6 +26,7 @@
     mgmtLanIf = "enp5s0f1";
     homeLanIf = "enp5s0f1.10";
     serverLanIf = "enp5s0f1.20";
+    materiaLanIf = "enp5s0f1.30";
     itscomIf = "enp5s0f1.200";
     mapeIf = "mape0";
     mapeBrV6 = "2404:9200:225:100::64";
