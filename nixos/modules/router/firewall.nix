@@ -5,6 +5,7 @@ let
     mgmtLanIf
     homeLanIf
     serverLanIf
+    materiaLanIf
     itscomIf
     mapeIf
     tailscaleIf
@@ -12,8 +13,6 @@ let
     itscomPublicV4
     staticNaptServerV4
     tailnetV4
-    materiaBgpPeerV4
-    materiaBgpPeerV6
     ;
 in
 {
@@ -31,6 +30,7 @@ in
         define TS = ${tailscaleIf}
 
         define SRV_LAN = ${serverLanIf}
+        define MATERIA_LAN = ${materiaLanIf}
         define ITSCOM = ${itscomIf}
         define ITSCOM_V4 = ${itscomV4}
         define ITSCOM_PUBLIC_V4 = ${itscomPublicV4}
@@ -59,10 +59,12 @@ in
                 iifname $MGMT_LAN meta l4proto ipv6-icmp accept
                 iifname $LAN meta l4proto ipv6-icmp accept
                 iifname $SRV_LAN meta l4proto ipv6-icmp accept
+                iifname $MATERIA_LAN meta l4proto ipv6-icmp accept
 
                 iifname $MGMT_LAN ip protocol icmp accept
                 iifname $LAN ip protocol icmp accept
                 iifname $SRV_LAN ip protocol icmp accept
+                iifname $MATERIA_LAN ip protocol icmp accept
 
                 iifname $MGMT_LAN tcp dport 22 ct state new accept
                 iifname $LAN tcp dport 22 ct state new accept
@@ -76,10 +78,6 @@ in
                 iifname $MGMT_LAN tcp dport 53 ct state new accept
                 iifname $LAN tcp dport 53 ct state new accept
                 iifname $SRV_LAN tcp dport 53 ct state new accept
-
-                # Accept materia BGP only from the Kubernetes node on the server LAN.
-                iifname $SRV_LAN ip saddr ${materiaBgpPeerV4} tcp dport 179 ct state new accept
-                iifname $SRV_LAN ip6 saddr ${materiaBgpPeerV6} tcp dport 179 ct state new accept
             }
 
             chain forward {
@@ -93,6 +91,7 @@ in
                 ct state established,related accept
 
                 iifname $LAN oifname $SRV_LAN ct state new accept
+                iifname { $LAN, $SRV_LAN } oifname $MATERIA_LAN ct state new accept
 
                 iifname $LAN oifname $TUN ct state new accept
                 iifname $TS oifname $LAN ip daddr 172.16.1.0/24 ct state new accept
@@ -101,6 +100,7 @@ in
                 iifname $SRV_LAN oifname $SRV_LAN ip daddr $STATIC_NAPT_SERVER_V4 ct state new accept
                 iifname $ITSCOM oifname $SRV_LAN ip daddr $STATIC_NAPT_SERVER_V4 ct state new accept
                 iifname $WAN oifname $SRV_LAN meta nfproto ipv6 ct state new accept
+                iifname $WAN oifname $MATERIA_LAN meta nfproto ipv6 tcp dport { 80, 443 } ct state new accept
                 iifname $LAN oifname $WAN meta nfproto ipv6 ct state new accept
                 iifname $SRV_LAN oifname $WAN meta nfproto ipv6 ct state new accept
             }

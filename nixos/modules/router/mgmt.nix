@@ -5,6 +5,7 @@ let
     mgmtLanIf
     homeLanIf
     serverLanIf
+    materiaLanIf
     itscomIf
     lanDhcpServerConfig
     ;
@@ -46,6 +47,14 @@ in
         vlanConfig.Id = 20;
       };
 
+      "20-${materiaLanIf}" = {
+        netdevConfig = {
+          Name = materiaLanIf;
+          Kind = "vlan";
+        };
+        vlanConfig.Id = 30;
+      };
+
       "20-${itscomIf}" = {
         netdevConfig = {
           Name = itscomIf;
@@ -60,6 +69,7 @@ in
       vlan = [
         homeLanIf
         serverLanIf
+        materiaLanIf
         itscomIf
       ];
       networkConfig = {
