@@ -9,7 +9,6 @@
     ./server.nix
     ./cloudflared.nix
     ./cloudflare-ddns.nix
-    ./apcupsd.nix
     ./blackbox.nix
     ./node-exporter.nix
     ./otelcol.nix
