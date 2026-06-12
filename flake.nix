@@ -16,12 +16,14 @@
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
       mapeTool = pkgs.callPackage ./pkgs/mape-tool.nix { };
+      networkdPrefixWatcher = pkgs.callPackage ./pkgs/networkd-prefix-watcher.nix { };
       cloudflareDdns = pkgs.callPackage ./pkgs/cloudflare-ddns.nix { };
       otelcol = pkgs.callPackage ./pkgs/otelcol.nix { };
     in
     {
       packages.${system} = {
         mape-tool = mapeTool;
+        networkd-prefix-watcher = networkdPrefixWatcher;
         cloudflare-ddns = cloudflareDdns;
         inherit otelcol;
       };
@@ -33,7 +35,14 @@
           ./nixos/hosts/chlorine/configuration.nix
           { nixpkgs.pkgs = pkgs; }
         ];
-        specialArgs = { inherit mapeTool cloudflareDdns otelcol; };
+        specialArgs = {
+          inherit
+            mapeTool
+            networkdPrefixWatcher
+            cloudflareDdns
+            otelcol
+            ;
+        };
       };
     };
 }

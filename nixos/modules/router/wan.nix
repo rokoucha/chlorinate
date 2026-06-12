@@ -1,18 +1,37 @@
-{ config, pkgs, routerConst, mapeTool, ... }:
+{
+  config,
+  pkgs,
+  routerConst,
+  mapeTool,
+  networkdPrefixWatcher,
+  ...
+}:
 let
-  inherit (routerConst) wanIf lanTrunkIf;
+  inherit (routerConst) wanIf lanTrunkIf delegatedPrefixLen;
 in
 {
-  services.networkd-dispatcher = {
-    enable = true;
-    rules."50-mape" = {
-      onState = [ "routable" ];
-      script = ''
-        #!/bin/sh
-        [ "$IFACE" = "${wanIf}" ] || exit 0
-        exec systemctl restart mape-tool
+  systemd.targets.networkd-prefix-changed = {
+    description = "Network prefix changed trigger target";
+    unitConfig.StopWhenUnneeded = true;
+  };
+
+  systemd.services.networkd-prefix-watcher = {
+    description = "Watch DHCPv6-PD prefix changes";
+    after = [ "systemd-networkd.service" ];
+    wants = [ "systemd-networkd.service" ];
+    serviceConfig = {
+      Type = "simple";
+      ExecStart = ''
+        ${networkdPrefixWatcher}/bin/networkd-prefix-watcher \
+          --mode pd \
+          --prefix-len ${toString delegatedPrefixLen} \
+          --interface ${wanIf} \
+          --trigger-on-start
       '';
+      Restart = "on-failure";
+      RestartSec = "5s";
     };
+    wantedBy = [ "multi-user.target" ];
   };
 
   systemd.services.mape-tool = {
@@ -24,7 +43,15 @@ in
       "systemd-networkd.service"
     ];
     wants = [ "network-online.target" ];
-    partOf = [ "systemd-networkd.service" "nftables.service" ];
+    partOf = [
+      "systemd-networkd.service"
+      "nftables.service"
+      "networkd-prefix-changed.target"
+    ];
+    wantedBy = [
+      "multi-user.target"
+      "networkd-prefix-changed.target"
+    ];
     restartTriggers = [ (pkgs.writeText "nftables-ruleset" config.networking.nftables.ruleset) ];
     path = [ pkgs.nftables ];
     serviceConfig = {
@@ -35,7 +62,6 @@ in
       RestartSec = "5s";
       StartLimitIntervalSec = 0;
     };
-    wantedBy = [ "multi-user.target" ];
   };
 
   systemd.services.tune-router-nic-rings = {
