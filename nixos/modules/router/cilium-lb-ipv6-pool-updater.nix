@@ -18,7 +18,7 @@ in
       ExecStart = ''
         ${ciliumLbIpv6PoolUpdater}/bin/cilium-lb-ipv6-pool-updater \
           --iface ${materiaLanIf} \
-          --pool-name home-ipv6-lb \
+          --pool-name materia-public-ipv6 \
           --pool-prefix-len 112 \
           --pool-suffix ffff \
           --kubeconfig /var/lib/cilium-lb-ipv6-pool-updater/kubeconfig
