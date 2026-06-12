@@ -9,6 +9,7 @@
     ./server.nix
     ./cloudflared.nix
     ./cloudflare-ddns.nix
+    ./cilium-lb-ipv6-pool-updater.nix
     ./blackbox.nix
     ./node-exporter.nix
     ./otelcol.nix

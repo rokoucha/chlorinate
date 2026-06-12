@@ -18,6 +18,7 @@
       mapeTool = pkgs.callPackage ./pkgs/mape-tool.nix { };
       networkdPrefixWatcher = pkgs.callPackage ./pkgs/networkd-prefix-watcher.nix { };
       cloudflareDdns = pkgs.callPackage ./pkgs/cloudflare-ddns.nix { };
+      ciliumLbIpv6PoolUpdater = pkgs.callPackage ./pkgs/cilium-lb-ipv6-pool-updater.nix { };
       otelcol = pkgs.callPackage ./pkgs/otelcol.nix { };
     in
     {
@@ -25,6 +26,7 @@
         mape-tool = mapeTool;
         networkd-prefix-watcher = networkdPrefixWatcher;
         cloudflare-ddns = cloudflareDdns;
+        cilium-lb-ipv6-pool-updater = ciliumLbIpv6PoolUpdater;
         inherit otelcol;
       };
 
@@ -40,6 +42,7 @@
             mapeTool
             networkdPrefixWatcher
             cloudflareDdns
+            ciliumLbIpv6PoolUpdater
             otelcol
             ;
         };
