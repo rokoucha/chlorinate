@@ -28,7 +28,6 @@
     materiaLanIf = "enp5s0f1.30";
     itscomIf = "enp5s0f1.200";
     mapeIf = "mape0";
-    mapeBrV6 = "2404:9200:225:100::64";
     delegatedPrefixLen = 56;
     tailscaleIf = "tailscale0";
     itscomV4 = "172.16.254.10";
