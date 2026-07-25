@@ -28,13 +28,63 @@ jobs:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           CF_ACCESS_CLIENT_ID: ${{ vars.CF_ACCESS_CLIENT_ID }}
           CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+          ROUTER_CF_HOSTNAME: ${{ vars.ROUTER_CF_HOSTNAME }}
+          MAX_ATTEMPTS: "30"
+          RETRY_DELAY: "15"
         run: |
           printf '%s\n' "$DEPLOY_SSH_KEY" > /tmp/deploy_key
           chmod 600 /tmp/deploy_key
 
-          ssh \
-            -i /tmp/deploy_key \
-            -o StrictHostKeyChecking=no \
-            -o BatchMode=yes \
-            -o "ProxyCommand=cloudflared access ssh --hostname %h --id ${CF_ACCESS_CLIENT_ID} --secret ${CF_ACCESS_CLIENT_SECRET}" \
-            deploy@${{ vars.ROUTER_CF_HOSTNAME }}
+          router_ssh() {
+            ssh \
+              -i /tmp/deploy_key \
+              -o StrictHostKeyChecking=no \
+              -o BatchMode=yes \
+              -o ConnectTimeout=30 \
+              -o ServerAliveInterval=15 \
+              -o ServerAliveCountMax=4 \
+              -o "ProxyCommand=cloudflared access ssh --hostname %h --id ${CF_ACCESS_CLIENT_ID} --secret ${CF_ACCESS_CLIENT_SECRET}" \
+              "deploy@${ROUTER_CF_HOSTNAME}" "$1"
+          }
+
+          for phase in start wait; do
+            attempt=0
+            while true; do
+              attempt=$((attempt + 1))
+
+              rc=0
+              router_ssh "$phase" || rc=$?
+
+              case "$rc" in
+                0)
+                  break
+                  ;;
+                1)
+                  echo "::error::nixos-rebuild switch failed on the router."
+                  exit 1
+                  ;;
+                69)
+                  echo "::error::The router reports no deploy in progress; the switch never started or its unit was cleared."
+                  exit 1
+                  ;;
+                64)
+                  echo "::error::The router rejected the '${phase}' command."
+                  exit 1
+                  ;;
+                255)
+                  if [ "$attempt" -ge "$MAX_ATTEMPTS" ]; then
+                    echo "::error::Could not reach the router ${attempt} times in a row without getting a deploy result."
+                    exit 1
+                  fi
+                  echo "::notice::Lost the connection to the router during '${phase}' (attempt ${attempt}/${MAX_ATTEMPTS}); any switch already started keeps running detached. Reconnecting in ${RETRY_DELAY}s."
+                  sleep "$RETRY_DELAY"
+                  ;;
+                *)
+                  echo "::error::Unexpected exit code ${rc} from '${phase}' on the router."
+                  exit "$rc"
+                  ;;
+              esac
+            done
+          done
+
+          echo "Deploy completed successfully."

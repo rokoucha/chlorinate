@@ -7,10 +7,115 @@
 }:
 
 let
+  deployUnit = "nixos-deploy.service";
+
   nixosDeployScript = pkgs.writeShellScriptBin "nixos-deploy" ''
-    exec /run/current-system/sw/bin/nixos-rebuild switch \
-      --flake github:rokoucha/chlorinate#chlorine \
-      --refresh
+    set -euo pipefail
+
+    unit=${deployUnit}
+    systemctl=${pkgs.systemd}/bin/systemctl
+    journalctl=${pkgs.systemd}/bin/journalctl
+    systemd_run=${pkgs.systemd}/bin/systemd-run
+
+    prop() {
+      "$systemctl" show "$unit" --property="$1" --value 2>/dev/null || true
+    }
+
+    start() {
+      case "$(prop ActiveState)" in
+      activating | deactivating | reloading)
+        echo "nixos-deploy: a switch is already running; leaving it alone." >&2
+        return 0
+        ;;
+      esac
+
+      "$systemctl" stop "$unit" >/dev/null 2>&1 || true
+      "$systemctl" reset-failed "$unit" >/dev/null 2>&1 || true
+      for _ in $(seq 1 10); do
+        if [ "$(prop LoadState)" = "not-found" ]; then break; fi
+        sleep 1
+      done
+
+      "$systemd_run" \
+        --unit="$unit" \
+        --description="nixos-rebuild switch (chlorinate CD)" \
+        --service-type=oneshot \
+        --property=RemainAfterExit=yes \
+        --property=TimeoutStartSec=infinity \
+        --setenv=PATH=/run/wrappers/bin:/run/current-system/sw/bin \
+        --setenv=HOME=/root \
+        --no-block \
+        -- /run/current-system/sw/bin/nixos-rebuild switch \
+        --flake github:rokoucha/chlorinate#chlorine \
+        --refresh
+
+      for _ in $(seq 1 30); do
+        if [ "$(prop ActiveState)" != "inactive" ]; then break; fi
+        sleep 1
+      done
+
+      echo "nixos-deploy: started $unit (invocation $(prop InvocationID))" >&2
+    }
+
+    follow() {
+      journal_pid=""
+      invocation="$(prop InvocationID)"
+
+      if [ -n "$invocation" ]; then
+        "$journalctl" --follow --lines=all --no-pager --output=cat \
+          "_SYSTEMD_INVOCATION_ID=$invocation" &
+        journal_pid=$!
+      fi
+
+      while :; do
+        case "$(prop ActiveState)" in
+        activating | deactivating | reloading) sleep 2 ;;
+        *) break ;;
+        esac
+      done
+
+      sleep 2
+      if [ -n "$journal_pid" ]; then
+        kill "$journal_pid" 2>/dev/null || true
+        wait "$journal_pid" 2>/dev/null || true
+      fi
+
+      case "$(prop ActiveState)" in
+      active)
+        echo "nixos-deploy: switch finished successfully." >&2
+        return 0
+        ;;
+      failed)
+        echo "nixos-deploy: switch failed (result $(prop Result), exit status $(prop ExecMainStatus))." >&2
+        return 1
+        ;;
+      *)
+        echo "nixos-deploy: nothing to wait for ($unit is $(prop LoadState)/$(prop ActiveState))." >&2
+        return 69
+        ;;
+      esac
+    }
+
+    case "''${SSH_ORIGINAL_COMMAND:-deploy}" in
+    deploy)
+      start
+      follow
+      ;;
+    start)
+      start
+      ;;
+    wait)
+      follow
+      ;;
+    status)
+      "$systemctl" status "$unit" --no-pager || true
+      ;;
+    *)
+      echo "nixos-deploy: unknown command: ''${SSH_ORIGINAL_COMMAND:-}" >&2
+      echo "nixos-deploy: expected one of deploy, start, wait, status" >&2
+      exit 64
+      ;;
+    esac
   '';
 in
 {
@@ -99,7 +204,7 @@ in
     group = "deploy";
     shell = pkgs.bash;
     openssh.authorizedKeys.keys = [
-      "command=\"sudo /run/current-system/sw/bin/nixos-deploy\",no-port-forwarding,no-agent-forwarding,no-X11-forwarding,no-pty ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIP1Bjc5BT+NhkVF0z+Cz7abnTOf3VmRUyzKokN4ToY0b chlorinate-cd"
+      "command=\"sudo --preserve-env=SSH_ORIGINAL_COMMAND /run/current-system/sw/bin/nixos-deploy\",no-port-forwarding,no-agent-forwarding,no-X11-forwarding,no-pty ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIP1Bjc5BT+NhkVF0z+Cz7abnTOf3VmRUyzKokN4ToY0b chlorinate-cd"
     ];
   };
 
@@ -111,7 +216,10 @@ in
       commands = [
         {
           command = "/run/current-system/sw/bin/nixos-deploy";
-          options = [ "NOPASSWD" ];
+          options = [
+            "NOPASSWD"
+            "SETENV"
+          ];
         }
       ];
     }
