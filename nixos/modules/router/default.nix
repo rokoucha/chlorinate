@@ -12,6 +12,7 @@
     ./cilium-lb-ipv6-pool-updater.nix
     ./blackbox.nix
     ./node-exporter.nix
+    ./nftables-metrics.nix
     ./otelcol.nix
   ];
 

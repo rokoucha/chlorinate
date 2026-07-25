@@ -37,10 +37,21 @@ in
         define STATIC_NAPT_SERVER_V4 = ${staticNaptServerV4}
 
         table inet filter {
+            # Named counters are the only thing nftables counts, and
+            # nftables-metrics.nix exports them to node_exporter.
+            counter input_drop { }
+            counter input_invalid { }
+            counter forward_drop { }
+            counter forward_invalid { }
+
             chain input {
                 type filter hook input priority filter; policy drop;
 
                 iifname lo accept
+
+                # Count only, no verdict: invalid ICMPv6 must stay acceptable.
+                ct state invalid counter name "input_invalid"
+
                 ct state established,related accept
 
                 # WAN control plane required for IPv6, DHCPv6-PD, and PMTU.
@@ -78,6 +89,9 @@ in
                 iifname $MGMT_LAN tcp dport 53 ct state new accept
                 iifname $LAN tcp dport 53 ct state new accept
                 iifname $SRV_LAN tcp dport 53 ct state new accept
+
+                # Same verdict as the chain policy, but counted.
+                counter name "input_drop" drop
             }
 
             chain forward {
@@ -87,6 +101,8 @@ in
                 # they can be accepted by the forwarding rules below.
                 oifname $TUN tcp flags syn tcp option maxseg size set rt mtu
                 oifname $ITSCOM tcp flags syn tcp option maxseg size set rt mtu
+
+                ct state invalid counter name "forward_invalid"
 
                 ct state established,related accept
 
@@ -106,6 +122,8 @@ in
                 iifname $LAN oifname $WAN meta nfproto ipv6 ct state new accept
                 iifname $SRV_LAN oifname $WAN meta nfproto ipv6 ct state new accept
                 iifname $MATERIA_LAN oifname $WAN meta nfproto ipv6 ct state new accept
+
+                counter name "forward_drop" drop
             }
         }
 
