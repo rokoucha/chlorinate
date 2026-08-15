@@ -4,6 +4,7 @@
     ./firewall.nix
     ./kernel.nix
     ./wan.nix
+    ./warp-egress.nix
     ./mgmt.nix
     ./home.nix
     ./server.nix
@@ -32,6 +33,9 @@
     mapeIf = "mape0";
     delegatedPrefixLen = 56;
     tailscaleIf = "tailscale0";
+    warpTapIf = "vm-warp";
+    warpHostV4 = "172.31.133.1";
+    warpGuestV4 = "172.31.133.2";
     itscomV4 = "172.16.254.10";
     itscomPublicV4 = "175.177.69.46";
     staticNaptServerV4 = "172.16.2.21";

@@ -8,13 +8,27 @@
       url = "github:nix-community/lanzaboote/v1.0.0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    microvm = {
+      url = "github:microvm-nix/microvm.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
-    { nixpkgs, lanzaboote, ... }:
+    {
+      nixpkgs,
+      lanzaboote,
+      microvm,
+      ...
+    }:
     let
       system = "x86_64-linux";
-      pkgs = nixpkgs.legacyPackages.${system};
+      pkgs = import nixpkgs {
+        inherit system;
+        config.allowUnfreePredicate = pkg:
+          nixpkgs.lib.getName pkg == "cloudflare-warp";
+      };
       mapeTool = pkgs.callPackage ./pkgs/mape-tool.nix { };
       networkdPrefixWatcher = pkgs.callPackage ./pkgs/networkd-prefix-watcher.nix { };
       cloudflareDdns = pkgs.callPackage ./pkgs/cloudflare-ddns.nix { };
@@ -34,6 +48,7 @@
         inherit system;
         modules = [
           lanzaboote.nixosModules.lanzaboote
+          microvm.nixosModules.host
           ./nixos/hosts/chlorine/configuration.nix
           { nixpkgs.pkgs = pkgs; }
         ];
@@ -44,6 +59,7 @@
             cloudflareDdns
             ciliumLbIpv6PoolUpdater
             otelcol
+            microvm
             ;
         };
       };

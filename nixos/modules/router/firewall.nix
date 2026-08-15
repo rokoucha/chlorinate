@@ -9,6 +9,8 @@ let
     itscomIf
     mapeIf
     tailscaleIf
+    warpTapIf
+    warpGuestV4
     itscomV4
     itscomPublicV4
     staticNaptServerV4
@@ -28,6 +30,7 @@ in
         define LAN = ${homeLanIf}
         define TUN = ${mapeIf}
         define TS = ${tailscaleIf}
+        define WARP = ${warpTapIf}
 
         define SRV_LAN = ${serverLanIf}
         define MATERIA_LAN = ${materiaLanIf}
@@ -43,6 +46,18 @@ in
             counter input_invalid { }
             counter forward_drop { }
             counter forward_invalid { }
+
+            # Empty while the WARP data path is unhealthy. The health-check
+            # service atomically replaces its contents.
+            set warp_egress_v4 {
+                type ipv4_addr
+                flags interval
+            }
+
+            chain warp_egress_mark {
+                type filter hook prerouting priority mangle; policy accept;
+                iifname $LAN ip daddr @warp_egress_v4 meta mark set 13335
+            }
 
             chain input {
                 type filter hook input priority filter; policy drop;
@@ -111,6 +126,10 @@ in
                 iifname $MATERIA_LAN oifname $SRV_LAN ct state new accept
 
                 iifname $LAN oifname $TUN ct state new accept
+                iifname $LAN oifname $WARP meta mark 13335 ct state new accept
+                iifname $WARP oifname $LAN ct state new accept
+                iifname $WARP oifname $TUN meta nfproto ipv4 ct state new accept
+                iifname $WARP oifname $WAN meta nfproto ipv6 ct state new accept
                 iifname $TS oifname $LAN ip daddr 172.16.1.0/24 ct state new accept
                 iifname $TS oifname $TUN meta nfproto ipv4 ct state new accept
                 iifname $SRV_LAN oifname $ITSCOM ct state new accept
@@ -140,7 +159,8 @@ in
             chain postrouting {
                 type nat hook postrouting priority srcnat; policy accept;
 
-                # Server LAN -> iTSCOM
+                # IPv4 uplink source NAT.
+                oifname $TUN ip saddr ${warpGuestV4}/32 masquerade
                 oifname $ITSCOM ip saddr 172.16.2.0/24 snat to $ITSCOM_V4
                 oifname $ITSCOM ip saddr 172.16.3.0/24 snat to $ITSCOM_V4
                 oifname $LAN ip saddr ${tailnetV4} snat to 172.16.1.1
