@@ -54,6 +54,11 @@ in
     openFirewall = false;
   };
 
+  # warp-svc 2026.3 cannot parse NixOS systemd's `260.2` version string when
+  # selecting its systemd-resolved backend. Keep connector DNS file-based;
+  # the guest does not provide DNS to any other machine.
+  services.resolved.enable = false;
+
   # cloud-hypervisor cannot provide a PTY through `machinectl shell`. Use the
   # host-only vsock SSH transport with its dedicated host-generated key. TCP/22
   # remains blocked by the guest firewall below.
@@ -73,6 +78,10 @@ in
   networking = {
     useDHCP = false;
     useNetworkd = true;
+    nameservers = [
+      "1.1.1.1"
+      "1.0.0.1"
+    ];
     firewall.enable = false;
     nftables = {
       enable = true;
