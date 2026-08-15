@@ -7,8 +7,8 @@ let
   inherit (routerConst) warpTapIf warpHostV4 warpGuestV4;
   warpMac = "02:00:00:01:33:35";
   guestIf = "ens3";
-  # Match warp-router's endpoint selection: carry the WARP tunnel over IPv6
-  # instead of letting warp-svc prefer an IPv4 MASQUE endpoint.
+  # Match warp-router's endpoint selection: carry WireGuard over IPv6 instead
+  # of letting warp-svc choose an IPv4 endpoint.
   warpEndpoint = "[2606:4700:100::a29f:c101]:2408";
 in
 {
@@ -72,15 +72,25 @@ in
       Type = "oneshot";
       RemainAfterExit = true;
     };
-    path = [ pkgs.cloudflare-warp ];
+    path = [
+      pkgs.cloudflare-warp
+      pkgs.coreutils
+      pkgs.gnugrep
+    ];
     script = ''
-      for attempt in $(seq 1 30); do
-        if warp-cli --accept-tos tunnel endpoint set '${warpEndpoint}'; then
-          exit 0
+      for attempt in $(seq 1 60); do
+        settings="$(warp-cli --accept-tos settings 2>/dev/null || true)"
+        if printf '%s\n' "$settings" | grep -qi 'WireGuard'; then
+          if warp-cli --accept-tos tunnel endpoint set '${warpEndpoint}'; then
+            exit 0
+          fi
         fi
         sleep 1
       done
-      echo "Failed to configure the WARP IPv6 endpoint" >&2
+      # A UDP/2408 endpoint is not usable with MASQUE. Avoid leaving WARP in a
+      # broken state if the centrally managed device profile changes.
+      warp-cli --accept-tos tunnel endpoint reset || true
+      echo "The Cloudflare device profile did not select WireGuard" >&2
       exit 1
     '';
   };

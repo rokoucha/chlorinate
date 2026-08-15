@@ -33,6 +33,11 @@ After deploying the host configuration, create a Mesh node in the Cloudflare
 dashboard and copy its one-time connector token. Keep the token out of this
 repository and the Nix store.
 
+Set the Mesh node's matching Cloudflare device profile to use the `WireGuard`
+tunnel protocol. Mesh rejects a local protocol override, so this centrally
+managed setting is required before the guest can use the pinned IPv6 UDP/2408
+endpoint.
+
 Enter the MicroVM over its host-only vsock SSH transport and enroll it:
 
 ```console
