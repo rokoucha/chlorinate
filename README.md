@@ -54,6 +54,13 @@ $ sudo nft list set inet filter warp_egress_v4
 $ curl --interface 172.31.133.1 https://1.1.1.1/cdn-cgi/trace
 ```
 
+The guest pins its WARP tunnel to Cloudflare's IPv6 endpoint. Confirm that the
+outer tunnel is using IPv6 from the host while generating WARP traffic:
+
+```console
+$ sudo tcpdump -ni vm-warp 'ip6 and udp port 2408'
+```
+
 The MicroVM is not restarted automatically during `nixos-rebuild switch`, to
 avoid racing its virtiofsd backends. After a deployment that changes the guest
 configuration, restart it explicitly:

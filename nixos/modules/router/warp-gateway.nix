@@ -1,4 +1,5 @@
 {
+  pkgs,
   routerConst,
   ...
 }:
@@ -6,6 +7,9 @@ let
   inherit (routerConst) warpTapIf warpHostV4 warpGuestV4;
   warpMac = "02:00:00:01:33:35";
   guestIf = "ens3";
+  # Match warp-router's endpoint selection: carry the WARP tunnel over IPv6
+  # instead of letting warp-svc prefer an IPv4 MASQUE endpoint.
+  warpEndpoint = "[2606:4700:100::a29f:c101]:2408";
 in
 {
   networking.hostName = "warp-gateway";
@@ -53,6 +57,32 @@ in
   services.cloudflare-warp = {
     enable = true;
     openFirewall = false;
+  };
+
+  systemd.services.cloudflare-warp-ipv6-endpoint = {
+    description = "Pin the Cloudflare WARP tunnel to an IPv6 endpoint";
+    wantedBy = [ "multi-user.target" ];
+    after = [
+      "cloudflare-warp.service"
+      "network-online.target"
+    ];
+    requires = [ "cloudflare-warp.service" ];
+    wants = [ "network-online.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    path = [ pkgs.cloudflare-warp ];
+    script = ''
+      for attempt in $(seq 1 30); do
+        if warp-cli --accept-tos tunnel endpoint set '${warpEndpoint}'; then
+          exit 0
+        fi
+        sleep 1
+      done
+      echo "Failed to configure the WARP IPv6 endpoint" >&2
+      exit 1
+    '';
   };
 
   # warp-svc 2026.3 cannot parse NixOS systemd's `260.2` version string when
