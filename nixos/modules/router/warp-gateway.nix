@@ -13,7 +13,10 @@ in
   microvm = {
     hypervisor = "cloud-hypervisor";
     registerWithMachined = true;
-    vsock.cid = 13335;
+    vsock = {
+      cid = 13335;
+      ssh.enable = true;
+    };
     vcpu = 1;
     mem = 512;
     interfaces = [
@@ -30,6 +33,12 @@ in
         tag = "ro-store";
         proto = "virtiofs";
       }
+      {
+        source = "/var/lib/microvms/warp-gateway-ssh/public";
+        mountPoint = "/run/host-ssh";
+        tag = "host-ssh";
+        proto = "virtiofs";
+      }
     ];
     volumes = [
       {
@@ -43,6 +52,16 @@ in
   services.cloudflare-warp = {
     enable = true;
     openFirewall = false;
+  };
+
+  # cloud-hypervisor cannot provide a PTY through `machinectl shell`. Use the
+  # host-only vsock SSH transport with its dedicated host-generated key. TCP/22
+  # remains blocked by the guest firewall below.
+  users.users.root.hashedPassword = "!";
+  services.openssh.settings = {
+    AuthorizedKeysFile = "/run/host-ssh/authorized_keys";
+    PermitRootLogin = "prohibit-password";
+    PasswordAuthentication = false;
   };
 
   boot.kernel.sysctl = {

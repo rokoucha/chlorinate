@@ -48,6 +48,33 @@ in
     };
   };
 
+  systemd.services.warp-gateway-ssh-key = {
+    description = "Create the host-only SSH key for the WARP MicroVM";
+    requiredBy = [ "microvm@warp-gateway.service" ];
+    before = [
+      "microvm-virtiofsd@warp-gateway.service"
+      "microvm@warp-gateway.service"
+    ];
+    path = [ pkgs.openssh ];
+    serviceConfig.Type = "oneshot";
+    script = ''
+      install -d -m 0700 /var/lib/microvms/warp-gateway-ssh
+      install -d -m 0755 /var/lib/microvms/warp-gateway-ssh/public
+      if [ ! -s /var/lib/microvms/warp-gateway-ssh/id_ed25519 ]; then
+        ssh-keygen \
+          -q \
+          -t ed25519 \
+          -N "" \
+          -C warp-gateway-host \
+          -f /var/lib/microvms/warp-gateway-ssh/id_ed25519
+      fi
+      install \
+        -m 0644 \
+        /var/lib/microvms/warp-gateway-ssh/id_ed25519.pub \
+        /var/lib/microvms/warp-gateway-ssh/public/authorized_keys
+    '';
+  };
+
   systemd.network.networks."15-${warpTapIf}" = {
     matchConfig.Name = warpTapIf;
     address = [ "${warpHostV4}/30" ];

@@ -33,10 +33,11 @@ After deploying the host configuration, create a Mesh node in the Cloudflare
 dashboard and copy its one-time connector token. Keep the token out of this
 repository and the Nix store.
 
-Enter the MicroVM from the host and enroll it:
+Enter the MicroVM over its host-only vsock SSH transport and enroll it:
 
 ```console
-$ sudo machinectl shell warp-gateway
+$ sudo microvm -s warp-gateway -- \
+    -i /var/lib/microvms/warp-gateway-ssh/id_ed25519
 # warp-cli connector new <token>
 # warp-cli connect
 # warp-cli status
