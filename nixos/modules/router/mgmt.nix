@@ -1,4 +1,4 @@
-{ routerConst, ... }:
+{ lib, routerConst, ... }:
 let
   inherit (routerConst)
     lanTrunkIf
@@ -8,6 +8,7 @@ let
     materiaLanIf
     itscomIf
     lanDhcpServerConfig
+    warpDomains
     ;
 in
 {
@@ -21,12 +22,22 @@ in
       server = [
         "127.0.0.53"
       ];
+      # Populate routing targets from DNS answers. Both the original site and
+      # challenges.cloudflare.com must use the same WARP egress.
+      nftset = [
+        "/${lib.concatStringsSep "/" warpDomains}/4#inet#filter#warp_targets_v4,6#inet#filter#warp_targets_v6"
+      ];
       interface = [
         mgmtLanIf
         homeLanIf
         serverLanIf
       ];
     };
+  };
+
+  systemd.services.dnsmasq = {
+    after = [ "nftables.service" ];
+    requires = [ "nftables.service" ];
   };
 
   systemd.network = {

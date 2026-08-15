@@ -36,6 +36,13 @@
     warpTapIf = "vm-warp";
     warpHostV4 = "172.31.133.1";
     warpGuestV4 = "172.31.133.2";
+    # Derived from warp-gateway's fixed 02:00:00:01:33:35 MAC address.
+    warpGuestLinkLocalV6 = "fe80::ff:fe01:3335";
+    # Add the parent site and its API hostnames here as well as the challenge
+    # platform so that a complete Turnstile flow keeps one egress identity.
+    warpDomains = [
+      "challenges.cloudflare.com"
+    ];
     itscomV4 = "172.16.254.10";
     itscomPublicV4 = "175.177.69.46";
     staticNaptServerV4 = "172.16.2.21";

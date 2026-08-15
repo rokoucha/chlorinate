@@ -1,5 +1,4 @@
 {
-  lib,
   pkgs,
   routerConst,
   ...
@@ -7,37 +6,23 @@
 let
   inherit (routerConst)
     wanIf
-    mapeIf
     warpTapIf
     warpHostV4
     warpGuestV4
+    warpGuestLinkLocalV6
     ;
 
-  cloudflareV4 = [
-    "173.245.48.0/20"
-    "103.21.244.0/22"
-    "103.22.200.0/22"
-    "103.31.4.0/22"
-    "141.101.64.0/18"
-    "108.162.192.0/18"
-    "190.93.240.0/20"
-    "188.114.96.0/20"
-    "197.234.240.0/22"
-    "198.41.128.0/17"
-    "162.158.0.0/15"
-    "104.16.0.0/13"
-    "104.24.0.0/14"
-    "172.64.0.0/13"
-    "131.0.72.0/22"
-  ];
   warpHealthV4 = "1.1.1.1/32";
 
   enableWarpEgress = pkgs.writeText "warp-egress-enable.nft" ''
-    flush set inet filter warp_egress_v4
-    add element inet filter warp_egress_v4 { ${lib.concatStringsSep ", " cloudflareV4} }
+    flush set inet filter warp_enabled_v4
+    flush set inet filter warp_enabled_v6
+    add element inet filter warp_enabled_v4 { 0.0.0.0/0 }
+    add element inet filter warp_enabled_v6 { ::/0 }
   '';
   disableWarpEgress = pkgs.writeText "warp-egress-disable.nft" ''
-    flush set inet filter warp_egress_v4
+    flush set inet filter warp_enabled_v4
+    flush set inet filter warp_enabled_v6
   '';
 in
 {
@@ -101,13 +86,17 @@ in
       Assign=yes
       Token=eui64
 
-      ${lib.concatMapStringsSep "\n" (prefix: ''
-        [Route]
-        Destination=${prefix}
-        Gateway=${warpGuestV4}
-        GatewayOnLink=yes
-        Table=13335
-      '') cloudflareV4}
+      [Route]
+      Destination=0.0.0.0/0
+      Gateway=${warpGuestV4}
+      GatewayOnLink=yes
+      Table=13335
+
+      [Route]
+      Destination=::/0
+      Gateway=${warpGuestLinkLocalV6}
+      GatewayOnLink=yes
+      Table=13335
 
       # The trace endpoint is outside Cloudflare's published CDN prefixes, but
       # the host-side health probe must always test the WARP data path.

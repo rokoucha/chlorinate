@@ -46,16 +46,33 @@ in
             counter forward_drop { }
             counter forward_invalid { }
 
-            # Empty while the WARP data path is unhealthy. The health-check
-            # service atomically replaces its contents.
-            set warp_egress_v4 {
+            # dnsmasq populates these sets with A and AAAA answers for the
+            # configured WARP domains.
+            set warp_targets_v4 {
                 type ipv4_addr
+            }
+
+            set warp_targets_v6 {
+                type ipv6_addr
+            }
+
+            # Empty while the WARP data path is unhealthy. The health-check
+            # service atomically replaces these contents without disturbing
+            # dnsmasq's dynamically learned targets.
+            set warp_enabled_v4 {
+                type ipv4_addr
+                flags interval
+            }
+
+            set warp_enabled_v6 {
+                type ipv6_addr
                 flags interval
             }
 
             chain warp_egress_mark {
                 type filter hook prerouting priority mangle; policy accept;
-                iifname $LAN ip daddr @warp_egress_v4 meta mark set 13335
+                iifname $LAN ip daddr @warp_targets_v4 ip daddr @warp_enabled_v4 meta mark set 13335
+                iifname $LAN ip6 daddr @warp_targets_v6 ip6 daddr @warp_enabled_v6 meta mark set 13335
             }
 
             chain input {
