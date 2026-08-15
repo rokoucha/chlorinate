@@ -30,6 +30,7 @@ let
     "172.64.0.0/13"
     "131.0.72.0/22"
   ];
+  warpHealthV4 = "1.1.1.1/32";
 
   enableWarpEgress = pkgs.writeText "warp-egress-enable.nft" ''
     flush set inet filter warp_egress_v4
@@ -107,6 +108,14 @@ in
         GatewayOnLink=yes
         Table=13335
       '') cloudflareV4}
+
+      # The trace endpoint is outside Cloudflare's published CDN prefixes, but
+      # the host-side health probe must always test the WARP data path.
+      [Route]
+      Destination=${warpHealthV4}
+      Gateway=${warpGuestV4}
+      GatewayOnLink=yes
+      Table=13335
 
       [RoutingPolicyRule]
       FirewallMark=13335
