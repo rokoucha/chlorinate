@@ -10,7 +10,6 @@ let
     mapeIf
     tailscaleIf
     warpTapIf
-    warpGuestV4
     itscomV4
     itscomPublicV4
     staticNaptServerV4
@@ -80,6 +79,10 @@ in
                 iifname $TS tcp dport 22 ct state new accept
                 iifname $TS udp dport 53 accept
                 iifname $TS tcp dport 53 ct state new accept
+
+                # WARP MicroVM point-to-point control traffic.
+                iifname $WARP meta l4proto ipv6-icmp accept
+                iifname $WARP ip protocol icmp accept
 
                 # LAN-side management and infrastructure services.
                 iifname $MGMT_LAN meta l4proto ipv6-icmp accept
@@ -159,8 +162,8 @@ in
             chain postrouting {
                 type nat hook postrouting priority srcnat; policy accept;
 
-                # IPv4 uplink source NAT.
-                oifname $TUN ip saddr ${warpGuestV4}/32 masquerade
+                # The MAP-E service owns SNAT on $TUN, including traffic from
+                # the WARP MicroVM, because it must select an allowed port set.
                 oifname $ITSCOM ip saddr 172.16.2.0/24 snat to $ITSCOM_V4
                 oifname $ITSCOM ip saddr 172.16.3.0/24 snat to $ITSCOM_V4
                 oifname $LAN ip saddr ${tailnetV4} snat to 172.16.1.1
