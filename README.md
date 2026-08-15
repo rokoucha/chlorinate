@@ -54,5 +54,13 @@ $ sudo nft list set inet filter warp_egress_v4
 $ curl --interface 172.31.133.1 https://1.1.1.1/cdn-cgi/trace
 ```
 
+The MicroVM is not restarted automatically during `nixos-rebuild switch`, to
+avoid racing its virtiofsd backends. After a deployment that changes the guest
+configuration, restart it explicitly:
+
+```console
+$ sudo systemctl restart microvm@warp-gateway.service
+```
+
 Only the home LAN and Cloudflare's published IPv4 ranges are opted in. Server,
 Materia, Tailscale, IPv6, and host-originated traffic keep their existing paths.

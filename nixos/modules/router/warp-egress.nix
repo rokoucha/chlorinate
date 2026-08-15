@@ -42,6 +42,10 @@ in
 {
   microvm.vms.warp-gateway = {
     autostart = true;
+    # Restarting the VM and its virtiofsd backends in the same switch transaction
+    # can race: cloud-hypervisor sees the socket before virtiofsd accepts clients.
+    # Keep deployments reliable and apply guest changes with an explicit restart.
+    restartIfChanged = false;
     specialArgs = { inherit routerConst; };
     config = {
       imports = [ ./warp-gateway.nix ];
