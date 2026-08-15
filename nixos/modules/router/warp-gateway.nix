@@ -5,6 +5,7 @@
 let
   inherit (routerConst) warpTapIf warpHostV4 warpGuestV4;
   warpMac = "02:00:00:01:33:35";
+  guestIf = "ens3";
 in
 {
   networking.hostName = "warp-gateway";
@@ -91,13 +92,13 @@ in
             type filter hook input priority filter; policy drop;
             iifname lo accept
             ct state established,related accept
-            iifname "${warpTapIf}" meta l4proto { icmp, ipv6-icmp } accept
+            iifname "${guestIf}" meta l4proto { icmp, ipv6-icmp } accept
           }
 
           chain forward {
             type filter hook forward priority filter; policy drop;
             ct state established,related accept
-            iifname "${warpTapIf}" oifname "CloudflareWARP" accept
+            iifname "${guestIf}" oifname "CloudflareWARP" accept
           }
         }
 
