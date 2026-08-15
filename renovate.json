@@ -37,12 +37,5 @@
   ],
   "nix": {
     "enabled": true
-  },
-  "packageRules": [
-    {
-      "matchManagers": ["nix"],
-      "matchDepNames": ["nixpkgs"],
-      "enabled": false
-    }
-  ]
+  }
 }
