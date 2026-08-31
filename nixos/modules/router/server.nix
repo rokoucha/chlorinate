@@ -76,6 +76,11 @@ in
         [Network]
         Address=${itscomV4}/29
 
+        [RoutingPolicyRule]
+        From=${itscomV4}/32
+        Table=200
+        Priority=199
+
         [Route]
         Gateway=172.16.254.9
         Table=200
