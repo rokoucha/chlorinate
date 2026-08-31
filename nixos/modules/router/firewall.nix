@@ -37,8 +37,6 @@ in
         define ITSCOM_V4 = ${itscomV4}
         define ITSCOM_PUBLIC_V4 = ${itscomPublicV4}
         define STATIC_NAPT_SERVER_V4 = ${staticNaptServerV4}
-        define CILIUM_LB_TEST_V4 = 172.16.3.10
-
         table inet filter {
             # Named counters are the only thing nftables counts, and
             # nftables-metrics.nix exports them to node_exporter.
@@ -46,9 +44,6 @@ in
             counter input_invalid { }
             counter forward_drop { }
             counter forward_invalid { }
-            counter cilium_lb_test_forward { }
-            counter cilium_lb_test_return_materia { }
-            counter cilium_lb_test_return_server { }
 
             # dnsmasq populates these sets with A and AAAA answers for the
             # configured WARP domains.
@@ -143,8 +138,6 @@ in
 
                 ct state invalid counter name "forward_invalid"
 
-                ct state established,related iifname $MATERIA_LAN ip saddr $CILIUM_LB_TEST_V4 tcp sport 8080 counter name "cilium_lb_test_return_materia" accept
-                ct state established,related iifname $SRV_LAN ip saddr $CILIUM_LB_TEST_V4 tcp sport 8080 counter name "cilium_lb_test_return_server" accept
                 ct state established,related accept
 
                 iifname $LAN oifname $SRV_LAN ct state new accept
@@ -162,7 +155,6 @@ in
                 iifname $MATERIA_LAN oifname $ITSCOM ct state new accept
                 iifname $SRV_LAN oifname $SRV_LAN ip daddr $STATIC_NAPT_SERVER_V4 ct state new accept
                 iifname $ITSCOM oifname $SRV_LAN ip daddr $STATIC_NAPT_SERVER_V4 ct state new accept
-                iifname $ITSCOM oifname $MATERIA_LAN ip daddr $CILIUM_LB_TEST_V4 tcp dport 8080 ct state new counter name "cilium_lb_test_forward" accept
                 iifname $WAN oifname $SRV_LAN meta nfproto ipv6 ct state new accept
                 iifname $WAN oifname $MATERIA_LAN meta nfproto ipv6 tcp dport { 80, 443 } ct state new accept
                 iifname $LAN oifname $WAN meta nfproto ipv6 ct state new accept
@@ -174,16 +166,8 @@ in
         }
 
         table ip nat {
-            counter cilium_lb_test_dnat { }
-            counter cilium_lb_test_snat { }
-
             chain prerouting {
                 type nat hook prerouting priority dstnat; policy accept;
-
-                # Cilium L2 LoadBalancer PoC. Keep this before the existing
-                # catch-all static NAPT rule so only TCP/18080 is diverted.
-                iifname $ITSCOM ip daddr { $ITSCOM_V4, $ITSCOM_PUBLIC_V4 } tcp dport 18080 counter name "cilium_lb_test_dnat" dnat to $CILIUM_LB_TEST_V4:8080
-                iifname { $MGMT_LAN, $LAN, $SRV_LAN } ip daddr $ITSCOM_PUBLIC_V4 tcp dport 18080 dnat to $CILIUM_LB_TEST_V4:8080
 
                 # iTSCOM static NAPT -> server LAN
                 iifname $ITSCOM ip daddr { $ITSCOM_V4, $ITSCOM_PUBLIC_V4 } dnat to $STATIC_NAPT_SERVER_V4
@@ -198,10 +182,6 @@ in
                 # the WARP MicroVM, because it must select an allowed port set.
                 oifname $ITSCOM ip saddr 172.16.2.0/24 snat to $ITSCOM_V4
                 oifname $ITSCOM ip saddr 172.16.3.0/24 snat to $ITSCOM_V4
-                # Keep the PoC return path on MATERIA_LAN. Without this, the
-                # Kubernetes node routes replies to Internet clients via its
-                # default gateway on SRV_LAN, bypassing this DNAT conntrack.
-                iifname $ITSCOM oifname $MATERIA_LAN ip daddr $CILIUM_LB_TEST_V4 tcp dport 8080 counter name "cilium_lb_test_snat" snat to 172.16.3.1
                 oifname $LAN ip saddr ${tailnetV4} snat to 172.16.1.1
                 oifname $SRV_LAN ip saddr { 172.16.0.0/24, 172.16.1.0/24 } ip daddr $STATIC_NAPT_SERVER_V4 snat to 172.16.2.1
                 oifname $SRV_LAN ip saddr 172.16.2.0/24 ip daddr $STATIC_NAPT_SERVER_V4 snat to 172.16.2.1
