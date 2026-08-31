@@ -17,7 +17,7 @@ jobs:
       - name: Install cloudflared
         env:
           # renovate: datasource=github-releases depName=cloudflare/cloudflared
-          CLOUDFLARED_VERSION: "2026.8.2"
+          CLOUDFLARED_VERSION: "2026.8.3"
         run: |
           curl -fsSL "https://github.com/cloudflare/cloudflared/releases/download/${CLOUDFLARED_VERSION}/cloudflared-linux-amd64" \
             -o /usr/local/bin/cloudflared
