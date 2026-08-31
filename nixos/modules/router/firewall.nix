@@ -37,6 +37,7 @@ in
         define ITSCOM_V4 = ${itscomV4}
         define ITSCOM_PUBLIC_V4 = ${itscomPublicV4}
         define STATIC_NAPT_SERVER_V4 = ${staticNaptServerV4}
+        define CILIUM_LB_TEST_V4 = 172.16.3.10
 
         table inet filter {
             # Named counters are the only thing nftables counts, and
@@ -156,6 +157,7 @@ in
                 iifname $MATERIA_LAN oifname $ITSCOM ct state new accept
                 iifname $SRV_LAN oifname $SRV_LAN ip daddr $STATIC_NAPT_SERVER_V4 ct state new accept
                 iifname $ITSCOM oifname $SRV_LAN ip daddr $STATIC_NAPT_SERVER_V4 ct state new accept
+                iifname $ITSCOM oifname $MATERIA_LAN ip daddr $CILIUM_LB_TEST_V4 tcp dport 8080 ct state new accept
                 iifname $WAN oifname $SRV_LAN meta nfproto ipv6 ct state new accept
                 iifname $WAN oifname $MATERIA_LAN meta nfproto ipv6 tcp dport { 80, 443 } ct state new accept
                 iifname $LAN oifname $WAN meta nfproto ipv6 ct state new accept
@@ -169,6 +171,10 @@ in
         table ip nat {
             chain prerouting {
                 type nat hook prerouting priority dstnat; policy accept;
+
+                # Cilium L2 LoadBalancer PoC. Keep this before the existing
+                # catch-all static NAPT rule so only TCP/18080 is diverted.
+                iifname $ITSCOM ip daddr { $ITSCOM_V4, $ITSCOM_PUBLIC_V4 } tcp dport 18080 dnat to $CILIUM_LB_TEST_V4:8080
 
                 # iTSCOM static NAPT -> server LAN
                 iifname $ITSCOM ip daddr { $ITSCOM_V4, $ITSCOM_PUBLIC_V4 } dnat to $STATIC_NAPT_SERVER_V4
