@@ -46,6 +46,7 @@ in
             counter input_invalid { }
             counter forward_drop { }
             counter forward_invalid { }
+            counter cilium_lb_test_forward { }
 
             # dnsmasq populates these sets with A and AAAA answers for the
             # configured WARP domains.
@@ -157,7 +158,7 @@ in
                 iifname $MATERIA_LAN oifname $ITSCOM ct state new accept
                 iifname $SRV_LAN oifname $SRV_LAN ip daddr $STATIC_NAPT_SERVER_V4 ct state new accept
                 iifname $ITSCOM oifname $SRV_LAN ip daddr $STATIC_NAPT_SERVER_V4 ct state new accept
-                iifname $ITSCOM oifname $MATERIA_LAN ip daddr $CILIUM_LB_TEST_V4 tcp dport 8080 ct state new accept
+                iifname $ITSCOM oifname $MATERIA_LAN ip daddr $CILIUM_LB_TEST_V4 tcp dport 8080 ct state new counter name "cilium_lb_test_forward" accept
                 iifname $WAN oifname $SRV_LAN meta nfproto ipv6 ct state new accept
                 iifname $WAN oifname $MATERIA_LAN meta nfproto ipv6 tcp dport { 80, 443 } ct state new accept
                 iifname $LAN oifname $WAN meta nfproto ipv6 ct state new accept
@@ -169,12 +170,14 @@ in
         }
 
         table ip nat {
+            counter cilium_lb_test_dnat { }
+
             chain prerouting {
                 type nat hook prerouting priority dstnat; policy accept;
 
                 # Cilium L2 LoadBalancer PoC. Keep this before the existing
                 # catch-all static NAPT rule so only TCP/18080 is diverted.
-                iifname $ITSCOM ip daddr { $ITSCOM_V4, $ITSCOM_PUBLIC_V4 } tcp dport 18080 dnat to $CILIUM_LB_TEST_V4:8080
+                iifname $ITSCOM ip daddr { $ITSCOM_V4, $ITSCOM_PUBLIC_V4 } tcp dport 18080 counter name "cilium_lb_test_dnat" dnat to $CILIUM_LB_TEST_V4:8080
                 iifname { $MGMT_LAN, $LAN, $SRV_LAN } ip daddr $ITSCOM_PUBLIC_V4 tcp dport 18080 dnat to $CILIUM_LB_TEST_V4:8080
 
                 # iTSCOM static NAPT -> server LAN
