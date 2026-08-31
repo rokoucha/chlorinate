@@ -56,6 +56,11 @@ in
         IPv6Forwarding = true;
       };
       extraConfig = ''
+        [RoutingPolicyRule]
+        From=172.16.3.0/24
+        Table=200
+        Priority=200
+
         [DHCPPrefixDelegation]
         UplinkInterface=${wanIf}
         SubnetId=3
