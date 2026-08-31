@@ -193,6 +193,10 @@ in
                 # the WARP MicroVM, because it must select an allowed port set.
                 oifname $ITSCOM ip saddr 172.16.2.0/24 snat to $ITSCOM_V4
                 oifname $ITSCOM ip saddr 172.16.3.0/24 snat to $ITSCOM_V4
+                # Keep the PoC return path on MATERIA_LAN. Without this, the
+                # Kubernetes node routes replies to Internet clients via its
+                # default gateway on SRV_LAN, bypassing this DNAT conntrack.
+                iifname $ITSCOM oifname $MATERIA_LAN ip daddr $CILIUM_LB_TEST_V4 tcp dport 8080 snat to 172.16.3.1
                 oifname $LAN ip saddr ${tailnetV4} snat to 172.16.1.1
                 oifname $SRV_LAN ip saddr { 172.16.0.0/24, 172.16.1.0/24 } ip daddr $STATIC_NAPT_SERVER_V4 snat to 172.16.2.1
                 oifname $SRV_LAN ip saddr 172.16.2.0/24 ip daddr $STATIC_NAPT_SERVER_V4 snat to 172.16.2.1
