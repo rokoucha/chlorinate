@@ -175,6 +175,7 @@ in
                 # Cilium L2 LoadBalancer PoC. Keep this before the existing
                 # catch-all static NAPT rule so only TCP/18080 is diverted.
                 iifname $ITSCOM ip daddr { $ITSCOM_V4, $ITSCOM_PUBLIC_V4 } tcp dport 18080 dnat to $CILIUM_LB_TEST_V4:8080
+                iifname { $MGMT_LAN, $LAN, $SRV_LAN } ip daddr $ITSCOM_PUBLIC_V4 tcp dport 18080 dnat to $CILIUM_LB_TEST_V4:8080
 
                 # iTSCOM static NAPT -> server LAN
                 iifname $ITSCOM ip daddr { $ITSCOM_V4, $ITSCOM_PUBLIC_V4 } dnat to $STATIC_NAPT_SERVER_V4
