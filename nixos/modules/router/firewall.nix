@@ -47,6 +47,8 @@ in
             counter forward_drop { }
             counter forward_invalid { }
             counter cilium_lb_test_forward { }
+            counter cilium_lb_test_return_materia { }
+            counter cilium_lb_test_return_server { }
 
             # dnsmasq populates these sets with A and AAAA answers for the
             # configured WARP domains.
@@ -141,6 +143,8 @@ in
 
                 ct state invalid counter name "forward_invalid"
 
+                ct state established,related iifname $MATERIA_LAN ip saddr $CILIUM_LB_TEST_V4 tcp sport 8080 counter name "cilium_lb_test_return_materia" accept
+                ct state established,related iifname $SRV_LAN ip saddr $CILIUM_LB_TEST_V4 tcp sport 8080 counter name "cilium_lb_test_return_server" accept
                 ct state established,related accept
 
                 iifname $LAN oifname $SRV_LAN ct state new accept
@@ -171,6 +175,7 @@ in
 
         table ip nat {
             counter cilium_lb_test_dnat { }
+            counter cilium_lb_test_snat { }
 
             chain prerouting {
                 type nat hook prerouting priority dstnat; policy accept;
@@ -196,7 +201,7 @@ in
                 # Keep the PoC return path on MATERIA_LAN. Without this, the
                 # Kubernetes node routes replies to Internet clients via its
                 # default gateway on SRV_LAN, bypassing this DNAT conntrack.
-                iifname $ITSCOM oifname $MATERIA_LAN ip daddr $CILIUM_LB_TEST_V4 tcp dport 8080 snat to 172.16.3.1
+                iifname $ITSCOM oifname $MATERIA_LAN ip daddr $CILIUM_LB_TEST_V4 tcp dport 8080 counter name "cilium_lb_test_snat" snat to 172.16.3.1
                 oifname $LAN ip saddr ${tailnetV4} snat to 172.16.1.1
                 oifname $SRV_LAN ip saddr { 172.16.0.0/24, 172.16.1.0/24 } ip daddr $STATIC_NAPT_SERVER_V4 snat to 172.16.2.1
                 oifname $SRV_LAN ip saddr 172.16.2.0/24 ip daddr $STATIC_NAPT_SERVER_V4 snat to 172.16.2.1
