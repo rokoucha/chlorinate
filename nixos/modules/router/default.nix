@@ -47,6 +47,7 @@
     itscomPublicV4 = "175.177.69.46";
     staticNaptServerV4 = "172.16.2.21";
     teamspeakLbV4 = "172.16.3.10";
+    ingressLbV4 = "172.16.3.11";
     tailnetV4 = "100.64.0.0/10";
     lanDhcpServerConfig = router: {
       PoolOffset = 100;

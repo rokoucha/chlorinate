@@ -14,6 +14,7 @@ let
     itscomPublicV4
     staticNaptServerV4
     teamspeakLbV4
+    ingressLbV4
     tailnetV4
     ;
 in
@@ -39,6 +40,7 @@ in
         define ITSCOM_PUBLIC_V4 = ${itscomPublicV4}
         define STATIC_NAPT_SERVER_V4 = ${staticNaptServerV4}
         define TEAMSPEAK_LB_V4 = ${teamspeakLbV4}
+        define INGRESS_LB_V4 = ${ingressLbV4}
         table inet filter {
             # Named counters are the only thing nftables counts, and
             # nftables-metrics.nix exports them to node_exporter.
@@ -157,10 +159,13 @@ in
                 iifname $MATERIA_LAN oifname $ITSCOM ct state new accept
                 iifname { $MGMT_LAN, $LAN, $SRV_LAN, $MATERIA_LAN, $ITSCOM } oifname $MATERIA_LAN ip daddr $TEAMSPEAK_LB_V4 udp dport 9987 ct state new accept
                 iifname { $MGMT_LAN, $LAN, $SRV_LAN, $MATERIA_LAN, $ITSCOM } oifname $MATERIA_LAN ip daddr $TEAMSPEAK_LB_V4 tcp dport { 10011, 30033 } ct state new accept
+                iifname { $MGMT_LAN, $LAN, $SRV_LAN, $MATERIA_LAN, $ITSCOM } oifname $MATERIA_LAN ip daddr $INGRESS_LB_V4 tcp dport { 80, 443 } ct state new accept
+                iifname { $MGMT_LAN, $LAN, $SRV_LAN, $MATERIA_LAN, $ITSCOM } oifname $MATERIA_LAN ip daddr $INGRESS_LB_V4 udp dport 443 ct state new accept
                 iifname $SRV_LAN oifname $SRV_LAN ip daddr $STATIC_NAPT_SERVER_V4 ct state new accept
                 iifname $ITSCOM oifname $SRV_LAN ip daddr $STATIC_NAPT_SERVER_V4 ct state new accept
                 iifname $WAN oifname $SRV_LAN meta nfproto ipv6 ct state new accept
                 iifname $WAN oifname $MATERIA_LAN meta nfproto ipv6 tcp dport { 80, 443 } ct state new accept
+                iifname $WAN oifname $MATERIA_LAN meta nfproto ipv6 udp dport 443 ct state new accept
                 iifname $WAN oifname $MATERIA_LAN meta nfproto ipv6 udp dport 9987 ct state new accept
                 iifname $WAN oifname $MATERIA_LAN meta nfproto ipv6 tcp dport { 10011, 30033 } ct state new accept
                 iifname $LAN oifname $WAN meta nfproto ipv6 ct state new accept
@@ -176,6 +181,10 @@ in
                 type nat hook prerouting priority dstnat; policy accept;
 
                 # iTSCOM static NAPT -> server LAN
+                iifname $ITSCOM ip daddr { $ITSCOM_V4, $ITSCOM_PUBLIC_V4 } tcp dport { 80, 443 } dnat to $INGRESS_LB_V4
+                iifname $ITSCOM ip daddr { $ITSCOM_V4, $ITSCOM_PUBLIC_V4 } udp dport 443 dnat to $INGRESS_LB_V4
+                iifname { $MGMT_LAN, $LAN, $SRV_LAN, $MATERIA_LAN } ip daddr $ITSCOM_PUBLIC_V4 tcp dport { 80, 443 } dnat to $INGRESS_LB_V4
+                iifname { $MGMT_LAN, $LAN, $SRV_LAN, $MATERIA_LAN } ip daddr $ITSCOM_PUBLIC_V4 udp dport 443 dnat to $INGRESS_LB_V4
                 iifname $ITSCOM ip daddr { $ITSCOM_V4, $ITSCOM_PUBLIC_V4 } udp dport 9987 dnat to $TEAMSPEAK_LB_V4
                 iifname $ITSCOM ip daddr { $ITSCOM_V4, $ITSCOM_PUBLIC_V4 } tcp dport { 10011, 30033 } dnat to $TEAMSPEAK_LB_V4
                 iifname { $MGMT_LAN, $LAN, $SRV_LAN, $MATERIA_LAN } ip daddr $ITSCOM_PUBLIC_V4 udp dport 9987 dnat to $TEAMSPEAK_LB_V4
@@ -194,6 +203,8 @@ in
                 oifname $ITSCOM ip saddr 172.16.3.0/24 snat to $ITSCOM_V4
                 iifname $MATERIA_LAN oifname $MATERIA_LAN ip daddr $TEAMSPEAK_LB_V4 udp dport 9987 snat to 172.16.3.1
                 iifname $MATERIA_LAN oifname $MATERIA_LAN ip daddr $TEAMSPEAK_LB_V4 tcp dport { 10011, 30033 } snat to 172.16.3.1
+                iifname $MATERIA_LAN oifname $MATERIA_LAN ip daddr $INGRESS_LB_V4 tcp dport { 80, 443 } snat to 172.16.3.1
+                iifname $MATERIA_LAN oifname $MATERIA_LAN ip daddr $INGRESS_LB_V4 udp dport 443 snat to 172.16.3.1
                 oifname $LAN ip saddr ${tailnetV4} snat to 172.16.1.1
                 oifname $SRV_LAN ip saddr { 172.16.0.0/24, 172.16.1.0/24 } ip daddr $STATIC_NAPT_SERVER_V4 snat to 172.16.2.1
                 oifname $SRV_LAN ip saddr 172.16.2.0/24 ip daddr $STATIC_NAPT_SERVER_V4 snat to 172.16.2.1
