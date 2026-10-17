@@ -176,6 +176,16 @@ in
             }
         }
 
+        table ip6 nat {
+            chain postrouting {
+                type nat hook postrouting priority srcnat; policy accept;
+
+                # The delegated prefix changes; select the source from the egress interface.
+                iifname $SRV_LAN oifname $MATERIA_LAN tcp dport { 80, 443 } masquerade
+                iifname $SRV_LAN oifname $MATERIA_LAN udp dport 443 masquerade
+            }
+        }
+
         table ip nat {
             chain prerouting {
                 type nat hook prerouting priority dstnat; policy accept;
@@ -203,8 +213,9 @@ in
                 oifname $ITSCOM ip saddr 172.16.3.0/24 snat to $ITSCOM_V4
                 iifname $MATERIA_LAN oifname $MATERIA_LAN ip daddr $TEAMSPEAK_LB_V4 udp dport 9987 snat to 172.16.3.1
                 iifname $MATERIA_LAN oifname $MATERIA_LAN ip daddr $TEAMSPEAK_LB_V4 tcp dport { 10011, 30033 } snat to 172.16.3.1
-                iifname $MATERIA_LAN oifname $MATERIA_LAN ip daddr $INGRESS_LB_V4 tcp dport { 80, 443 } snat to 172.16.3.1
-                iifname $MATERIA_LAN oifname $MATERIA_LAN ip daddr $INGRESS_LB_V4 udp dport 443 snat to 172.16.3.1
+                # LB nodes share SRV_LAN; keep their replies through the router.
+                iifname { $SRV_LAN, $MATERIA_LAN } oifname $MATERIA_LAN ip daddr $INGRESS_LB_V4 tcp dport { 80, 443 } snat to 172.16.3.1
+                iifname { $SRV_LAN, $MATERIA_LAN } oifname $MATERIA_LAN ip daddr $INGRESS_LB_V4 udp dport 443 snat to 172.16.3.1
                 oifname $LAN ip saddr ${tailnetV4} snat to 172.16.1.1
                 oifname $SRV_LAN ip saddr { 172.16.0.0/24, 172.16.1.0/24 } ip daddr $STATIC_NAPT_SERVER_V4 snat to 172.16.2.1
                 oifname $SRV_LAN ip saddr 172.16.2.0/24 ip daddr $STATIC_NAPT_SERVER_V4 snat to 172.16.2.1
