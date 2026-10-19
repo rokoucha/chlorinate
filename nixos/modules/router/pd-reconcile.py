@@ -29,15 +29,7 @@ def ranges(prefix):
             "lbCIDR": str(ipaddress.IPv6Network((base + (0xffff << 48), 112)))}
 
 
-def delegation(routes):
-    candidates = {r["dst"] for r in routes if r.get("type") == "unreachable"
-                  and ipaddress.ip_network(r["dst"]).prefixlen == 56}
-    if len(candidates) != 1:
-        raise ValueError("ambiguous or absent live DHCP-PD: " + repr(candidates))
-    return ranges(candidates.pop())
-
-
-def lease_delegation(link, now, routes):
+def lease_delegation(link, now):
     prefixes = link.get("DHCPv6Client", {}).get("Prefixes", [])
     preferred = {p["PrefixString"] + "/56" for p in prefixes
                  if p.get("PrefixLength") == 56 and p.get("PreferredLifetimeUSec", 0) > now
@@ -45,9 +37,8 @@ def lease_delegation(link, now, routes):
     if len(preferred) != 1:
         raise ValueError("a unique preferred live /56 lease is required")
     selected = ipaddress.ip_network(preferred.pop())
-    # Do not publish a new generation before networkd has installed its route.
-    candidates = [r for r in routes if r.get("dst") == str(selected)]
-    return delegation(candidates)
+    # networkd can keep a valid lease without a covering unreachable route.
+    return ranges(str(selected))
 
 
 class Kube:
@@ -166,9 +157,8 @@ def public_ready(kube, generation):
 
 
 def reconcile(kube, gateways, lan, lb_lan, wan):
-    routes = json.loads(run("ip", "-j", "-6", "route", "show", "proto", "dhcp"))
     link = json.loads(run("networkctl", "--json=short", "status", wan))
-    current = lease_delegation(link, time.clock_gettime(getattr(time, "CLOCK_BOOTTIME", time.CLOCK_MONOTONIC)) * 1_000_000, routes)
+    current = lease_delegation(link, time.clock_gettime(getattr(time, "CLOCK_BOOTTIME", time.CLOCK_MONOTONIC)) * 1_000_000)
     # Pools encode previous generations; a restart cannot lose retention state.
     pools = kube.get("ciliumpodippools")["items"]
     generations = {current["pool"]: current}
