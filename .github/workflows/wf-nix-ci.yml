@@ -18,6 +18,9 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
 
+      - name: Test PD reconciliation
+        run: python3 -m unittest discover -s tests
+
       - name: Check flake
         run: nix flake check --all-systems --no-build
 

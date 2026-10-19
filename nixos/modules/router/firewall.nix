@@ -132,6 +132,19 @@ in
                 counter name "input_drop" drop
             }
 
+            set pd_node_lans {
+                type ipv6_addr
+                flags interval
+            }
+            set pd_pods {
+                type ipv6_addr
+                flags interval
+            }
+            set pd_lbs {
+                type ipv6_addr
+                flags interval
+            }
+
             chain forward {
                 type filter hook forward priority filter; policy drop;
 
@@ -163,26 +176,20 @@ in
                 iifname { $MGMT_LAN, $LAN, $SRV_LAN, $MATERIA_LAN, $ITSCOM } oifname $MATERIA_LAN ip daddr $INGRESS_LB_V4 udp dport 443 ct state new accept
                 iifname $SRV_LAN oifname $SRV_LAN ip daddr $STATIC_NAPT_SERVER_V4 ct state new accept
                 iifname $ITSCOM oifname $SRV_LAN ip daddr $STATIC_NAPT_SERVER_V4 ct state new accept
-                iifname $WAN oifname $SRV_LAN meta nfproto ipv6 ct state new accept
-                iifname $WAN oifname $MATERIA_LAN meta nfproto ipv6 tcp dport { 80, 443 } ct state new accept
-                iifname $WAN oifname $MATERIA_LAN meta nfproto ipv6 udp dport 443 ct state new accept
-                iifname $WAN oifname $MATERIA_LAN meta nfproto ipv6 udp dport 9987 ct state new accept
-                iifname $WAN oifname $MATERIA_LAN meta nfproto ipv6 tcp dport { 10011, 30033 } ct state new accept
+                # Evaluate the Pod boundary before the broad node LAN allowance.
+                iifname $WAN ip6 daddr @pd_pods icmpv6 type { destination-unreachable, packet-too-big, time-exceeded, parameter-problem } accept
+                iifname $WAN ip6 daddr @pd_pods drop
+                iifname $WAN ip6 daddr @pd_lbs icmpv6 type { destination-unreachable, packet-too-big, time-exceeded, parameter-problem } accept
+                iifname $WAN oifname $SRV_LAN ip6 daddr @pd_node_lans ct state new accept
+                iifname $WAN oifname $MATERIA_LAN ip6 daddr @pd_lbs tcp dport { 80, 443 } ct state new accept
+                iifname $WAN oifname $MATERIA_LAN ip6 daddr @pd_lbs udp dport 443 ct state new accept
+                iifname $WAN oifname $MATERIA_LAN ip6 daddr @pd_lbs udp dport 9987 ct state new accept
+                iifname $WAN oifname $MATERIA_LAN ip6 daddr @pd_lbs tcp dport { 10011, 30033 } ct state new accept
                 iifname $LAN oifname $WAN meta nfproto ipv6 ct state new accept
                 iifname $SRV_LAN oifname $WAN meta nfproto ipv6 ct state new accept
                 iifname $MATERIA_LAN oifname $WAN meta nfproto ipv6 ct state new accept
 
                 counter name "forward_drop" drop
-            }
-        }
-
-        table ip6 nat {
-            chain postrouting {
-                type nat hook postrouting priority srcnat; policy accept;
-
-                # The delegated prefix changes; select the source from the egress interface.
-                iifname $SRV_LAN oifname $MATERIA_LAN tcp dport { 80, 443 } masquerade
-                iifname $SRV_LAN oifname $MATERIA_LAN udp dport 443 masquerade
             }
         }
 
