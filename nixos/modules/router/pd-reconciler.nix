@@ -84,7 +84,7 @@ in
       ];
       script = ''
         ip -6 monitor route | while IFS= read -r event; do
-          if echo "$event" | grep -q 'unreachable .*proto dhcp'; then
+          if echo "$event" | grep -Eq 'proto dhcp|dev ${serverLanIf}.*proto kernel'; then
             systemctl --no-block start materia-pd.service
           fi
         done

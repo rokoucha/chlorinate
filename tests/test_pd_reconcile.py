@@ -26,7 +26,7 @@ class PDTests(unittest.TestCase):
         routes = [{"type": "unreachable", "dst": p} for p in ("240b:10:3f6d:1400::/56", "240b:10:1234:5600::/56")]
         for candidates in ([], routes):
             with self.assertRaises(ValueError):
-                pd.delegation(candidates)
+                pd.lease_delegation({"DHCPv6Client": {"Prefixes": [{"PrefixString": r["dst"].split("/")[0], "PrefixLength": 56, "PreferredLifetimeUSec": 200, "ValidLifetimeUSec": 200} for r in candidates]}}, 100)
 
     def test_deprecated_lease_does_not_block_new_pd(self):
         prefixes = [{"PrefixString": "240b:10:3f6d:1400::", "PrefixLength": 56,
@@ -34,8 +34,9 @@ class PDTests(unittest.TestCase):
                     {"PrefixString": "240b:10:1234:5600::", "PrefixLength": 56,
                      "PreferredLifetimeUSec": 150, "ValidLifetimeUSec": 200}]
         routes = [{"type": "unreachable", "dst": p["PrefixString"] + "/56"} for p in prefixes]
-        result = pd.lease_delegation({"DHCPv6Client": {"Prefixes": prefixes}}, 100, routes)
+        result = pd.lease_delegation({"DHCPv6Client": {"Prefixes": prefixes}}, 100)
         self.assertEqual(result["pool"], pd.ranges("240b:10:1234:5600::/56")["pool"])
+        self.assertEqual(pd.lease_delegation({"DHCPv6Client": {"Prefixes": prefixes}}, 100), result)
 
     def test_actual_allocations_only(self):
         cidr = "240b:10:3f6d:1403:1000::100/120"
