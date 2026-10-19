@@ -1,6 +1,7 @@
 { ... }:
 {
   imports = [
+    ./pd-reconciler.nix
     ./firewall.nix
     ./kernel.nix
     ./wan.nix

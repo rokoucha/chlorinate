@@ -51,7 +51,8 @@ in
       matchConfig.Name = materiaLanIf;
       networkConfig = {
         Address = "172.16.3.1/24";
-        DHCPPrefixDelegation = true;
+        LinkLocalAddressing = "ipv6";
+        IPv6AcceptRA = false;
         IPv4Forwarding = true;
         IPv6Forwarding = true;
       };
@@ -60,13 +61,6 @@ in
         From=172.16.3.0/24
         Table=200
         Priority=200
-
-        [DHCPPrefixDelegation]
-        UplinkInterface=${wanIf}
-        SubnetId=3
-        Announce=no
-        Assign=yes
-        Token=eui64
       '';
     };
 

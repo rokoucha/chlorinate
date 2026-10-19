@@ -119,6 +119,7 @@ let
   '';
 in
 {
+  services.materia-pd.enable = true;
   imports = [
     ./hardware-configuration.nix
     ../../modules/router
