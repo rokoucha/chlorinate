@@ -7,7 +7,7 @@ let
       polling = 30
       sampling.bps_ratio = 0
       sampling = 100
-      header = 128
+      headerBytes = 128
       collector { ip = 172.16.3.12 udpport = 6343 }
       pcap { dev = ${routerConst.homeLanIf} }
     }

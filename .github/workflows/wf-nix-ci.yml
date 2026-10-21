@@ -26,3 +26,6 @@ jobs:
 
       - name: Build chlorine system
         run: nix build .#nixosConfigurations.chlorine.config.system.build.toplevel
+
+      - name: Start sFlow agent with evaluated config
+        run: python3 tests/sflow-config.py
