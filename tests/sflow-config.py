@@ -13,7 +13,7 @@ with tempfile.TemporaryDirectory() as directory:
     directory = Path(directory)
     directory.chmod(0o755)
     source = Path(command[command.index("-f") + 1]).read_text()
-    source = source.replace("enp5s0f1.10", "lo").replace("172.16.3.12", "127.0.0.1")
+    source = source.replace("enp5s0f1.10", "lo").replace("enp5s0f1", "lo").replace("172.16.3.12", "127.0.0.1")
     config = directory / "hsflowd.conf"
     config.write_text(source)
     for flag, path in [("-f", config), ("-p", directory / "pid"), ("-o", directory / "auto")]:

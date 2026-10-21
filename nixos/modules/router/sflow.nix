@@ -9,13 +9,14 @@ let
       sampling = 100
       headerBytes = 128
       collector { ip = 172.16.3.12 udpport = 6343 }
-      pcap { dev = ${routerConst.homeLanIf} }
+      # Sample the trunk once: sampling its VLAN devices too would count frames twice.
+      pcap { dev = ${routerConst.lanTrunkIf} }
     }
   '';
 in
 {
   systemd.services.hsflowd = {
-    description = "Sample home LAN traffic for materia flow accounting";
+    description = "Sample all LAN traffic for materia flow accounting";
     wantedBy = [ "multi-user.target" ];
     wants = [ "network-online.target" ];
     after = [ "network-online.target" ];
