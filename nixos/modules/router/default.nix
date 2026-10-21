@@ -7,6 +7,7 @@
     ./wan.nix
     ./warp-egress.nix
     ./mgmt.nix
+    ./dhcp-dns.nix
     ./home.nix
     ./server.nix
     ./cloudflared.nix
