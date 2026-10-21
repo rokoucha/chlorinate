@@ -16,6 +16,7 @@
     ./node-exporter.nix
     ./nftables-metrics.nix
     ./otelcol.nix
+    ./sflow.nix
   ];
 
   systemd.network = {
