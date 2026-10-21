@@ -20,3 +20,12 @@ class DhcpDnsTests(unittest.TestCase):
 
     def test_removed_leases_remove_records(self):
         self.assertEqual(dns.hosts({}, 100), "")
+
+    def test_each_dhcp_network_only_publishes_its_own_leases(self):
+        for network in (0, 1, 2):
+            lease = dict(Hostname="host", Address=[172, 16, network, 100],
+                         HardwareAddressType=1, HardwareAddressLength=6,
+                         HardwareAddress=[2, 0, 0, 0, 0, 1], ExpirationUSec=200)
+            link = {"DHCPServer": {"Leases": [lease]}}
+            self.assertIn(f"172.16.{network}.100 host.home.arpa", dns.hosts(link, 100, f"172.16.{network}.0/24"))
+            self.assertEqual(dns.hosts(link, 100, "172.16.3.0/24"), "")

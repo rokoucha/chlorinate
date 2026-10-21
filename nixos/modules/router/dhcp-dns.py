@@ -7,7 +7,7 @@ import sys
 import time
 
 
-def hosts(link, now):
+def hosts(link, now, subnet="172.16.1.0/24"):
     records = []
     for lease in link.get("DHCPServer", {}).get("Leases", []):
         name = lease.get("Hostname", "").split(".")[0].lower()
@@ -19,17 +19,21 @@ def hosts(link, now):
             continue
         mac = bytes(lease["HardwareAddress"][:6]).hex()
         address = ipaddress.IPv4Address(bytes(lease["Address"]))
-        if address not in ipaddress.IPv4Network("172.16.1.0/24"):
+        if address not in ipaddress.IPv4Network(subnet):
             continue
         records.append(f"{address} {name}.home.arpa mac-{mac}.devices.home.arpa\n")
     return "".join(sorted(records))
 
 
 def main():
-    link = json.loads(subprocess.check_output(
-        ["networkctl", "--json=short", "status", sys.argv[1]], timeout=10
-    ))
-    content = hosts(link, time.clock_gettime(time.CLOCK_BOOTTIME) * 1_000_000)
+    now = time.clock_gettime(time.CLOCK_BOOTTIME) * 1_000_000
+    records = []
+    for interface, subnet in zip(sys.argv[1::2], sys.argv[2::2], strict=True):
+        link = json.loads(subprocess.check_output(
+            ["networkctl", "--json=short", "status", interface], timeout=10
+        ))
+        records.append(hosts(link, now, subnet))
+    content = "".join(records)
     target = Path("/run/networkd-dns/hosts")
     if content != target.read_text():
         temporary = target.with_suffix(".new")

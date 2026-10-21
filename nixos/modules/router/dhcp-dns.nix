@@ -10,13 +10,13 @@
     "f /run/networkd-dns/hosts 0644 root root -"
   ];
   systemd.services.networkd-dns = {
-    description = "Publish home DHCP hostnames in dnsmasq";
+    description = "Publish LAN DHCP hostnames in dnsmasq";
     after = [ "systemd-networkd.service" "dnsmasq.service" ];
     requires = [ "dnsmasq.service" ];
     path = [ pkgs.systemd ];
     serviceConfig = {
       Type = "oneshot";
-      ExecStart = "${pkgs.python3}/bin/python3 ${./dhcp-dns.py} ${routerConst.homeLanIf}";
+      ExecStart = "${pkgs.python3}/bin/python3 ${./dhcp-dns.py} ${routerConst.mgmtLanIf} 172.16.0.0/24 ${routerConst.homeLanIf} 172.16.1.0/24 ${routerConst.serverLanIf} 172.16.2.0/24";
       NoNewPrivileges = true;
       ProtectSystem = "strict";
       ProtectHome = true;
