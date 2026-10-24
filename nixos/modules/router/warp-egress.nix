@@ -81,7 +81,7 @@ in
 
       [DHCPPrefixDelegation]
       UplinkInterface=${wanIf}
-      SubnetId=4
+      SubnetId=5
       Announce=yes
       Assign=yes
       Token=eui64

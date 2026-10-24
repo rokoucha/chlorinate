@@ -6,6 +6,8 @@ let
     homeLanIf
     serverLanIf
     materiaLanIf
+    iotLanIf
+    iotVlanIf
     itscomIf
     lanDhcpServerConfig
     warpDomains
@@ -31,6 +33,7 @@ in
         mgmtLanIf
         homeLanIf
         serverLanIf
+        iotLanIf
       ];
     };
   };
@@ -81,6 +84,7 @@ in
         homeLanIf
         serverLanIf
         materiaLanIf
+        iotVlanIf
         itscomIf
       ];
       networkConfig = {
