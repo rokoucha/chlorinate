@@ -16,7 +16,7 @@
     path = [ pkgs.systemd ];
     serviceConfig = {
       Type = "oneshot";
-      ExecStart = "${pkgs.python3}/bin/python3 ${./dhcp-dns.py} ${routerConst.mgmtLanIf} 172.16.0.0/24 ${routerConst.homeLanIf} 172.16.1.0/24 ${routerConst.serverLanIf} 172.16.2.0/24";
+      ExecStart = "${pkgs.python3}/bin/python3 ${./dhcp-dns.py} ${routerConst.mgmtLanIf} 172.16.0.0/24 ${routerConst.homeLanIf} 172.16.1.0/24 ${routerConst.serverLanIf} 172.16.2.0/24 ${routerConst.iotLanIf} 172.16.4.0/24";
       NoNewPrivileges = true;
       ProtectSystem = "strict";
       ProtectHome = true;

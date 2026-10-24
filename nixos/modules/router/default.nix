@@ -9,6 +9,7 @@
     ./mgmt.nix
     ./dhcp-dns.nix
     ./home.nix
+    ./iot.nix
     ./server.nix
     ./cloudflared.nix
     ./cloudflare-ddns.nix
@@ -32,6 +33,9 @@
     homeLanIf = "enp5s0f1.10";
     serverLanIf = "enp5s0f1.20";
     materiaLanIf = "enp5s0f1.30";
+    iotLanIf = "br-iot";
+    iotVlanIf = "enp5s0f1.40";
+    iotWifiIf = "wlp0s20f0u3";
     itscomIf = "enp5s0f1.200";
     mapeIf = "mape0";
     delegatedPrefixLen = 56;

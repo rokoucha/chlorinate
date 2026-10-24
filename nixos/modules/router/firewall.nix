@@ -6,6 +6,7 @@ let
     homeLanIf
     serverLanIf
     materiaLanIf
+    iotLanIf
     itscomIf
     mapeIf
     tailscaleIf
@@ -35,6 +36,7 @@ in
 
         define SRV_LAN = ${serverLanIf}
         define MATERIA_LAN = ${materiaLanIf}
+        define IOT_LAN = ${iotLanIf}
         define ITSCOM = ${itscomIf}
         define ITSCOM_V4 = ${itscomV4}
         define ITSCOM_PUBLIC_V4 = ${itscomPublicV4}
@@ -128,6 +130,11 @@ in
                 iifname $LAN tcp dport 53 ct state new accept
                 iifname $SRV_LAN tcp dport 53 ct state new accept
 
+                iifname $IOT_LAN meta l4proto ipv6-icmp accept
+                iifname $IOT_LAN ip protocol icmp accept
+                iifname $IOT_LAN udp dport { 53, 67 } accept
+                iifname $IOT_LAN tcp dport 53 ct state new accept
+
                 # Same verdict as the chain policy, but counted.
                 counter name "input_drop" drop
             }
@@ -156,6 +163,13 @@ in
                 ct state invalid counter name "forward_invalid"
 
                 ct state established,related accept
+
+                # IoT may reach the Internet, while local control starts on trusted LANs.
+                iifname $IOT_LAN oifname $TUN meta nfproto ipv4 ct state new accept
+                iifname $IOT_LAN oifname $WAN meta nfproto ipv6 ct state new accept
+                iifname { $MGMT_LAN, $LAN, $SRV_LAN, $MATERIA_LAN } oifname $IOT_LAN tcp dport { 6053, 3232 } ct state new accept
+                iifname { $MGMT_LAN, $LAN, $SRV_LAN, $MATERIA_LAN } oifname $IOT_LAN ip protocol icmp accept
+                iifname { $MGMT_LAN, $LAN, $SRV_LAN, $MATERIA_LAN } oifname $IOT_LAN meta l4proto ipv6-icmp accept
 
                 iifname $LAN oifname $SRV_LAN ct state new accept
                 iifname { $LAN, $SRV_LAN } oifname $MATERIA_LAN ct state new accept
