@@ -22,7 +22,7 @@
   untagged VLAN 40 with PVID 40. No switch configuration is managed here.
 - IoT can reach the Internet over MAP-E (IPv4) and native IPv6. New connections
   to existing LANs and router management are blocked. Trusted LANs can initiate
-  ESPHome API (TCP 6053), OTA (TCP 3232), and diagnostic ICMP to IoT.
+  SSH (TCP 22), ESPHome API (TCP 6053), OTA (TCP 3232), and diagnostic ICMP to IoT.
 - mDNS is not relayed. Register ESPHome by IP/hostname; add DHCP reservations
   and a destination-specific MQTT rule when the devices and broker are assigned.
   Home Assistant's Cilium egress policy must also permit its ESPHome connections.
