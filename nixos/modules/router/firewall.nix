@@ -167,7 +167,7 @@ in
                 # IoT may reach the Internet, while local control starts on trusted LANs.
                 iifname $IOT_LAN oifname $TUN meta nfproto ipv4 ct state new accept
                 iifname $IOT_LAN oifname $WAN meta nfproto ipv6 ct state new accept
-                iifname { $MGMT_LAN, $LAN, $SRV_LAN, $MATERIA_LAN } oifname $IOT_LAN tcp dport { 6053, 3232 } ct state new accept
+                iifname { $MGMT_LAN, $LAN, $SRV_LAN, $MATERIA_LAN } oifname $IOT_LAN tcp dport { 22, 6053, 3232 } ct state new accept
                 iifname { $MGMT_LAN, $LAN, $SRV_LAN, $MATERIA_LAN } oifname $IOT_LAN ip protocol icmp accept
                 iifname { $MGMT_LAN, $LAN, $SRV_LAN, $MATERIA_LAN } oifname $IOT_LAN meta l4proto ipv6-icmp accept
 
