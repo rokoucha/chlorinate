@@ -164,6 +164,9 @@ in
 
                 ct state established,related accept
 
+                # Home Assistant reaches the B-route broker through node IPv4 SNAT.
+                iifname $SRV_LAN oifname $IOT_LAN ip saddr { 172.16.2.21, 172.16.2.22, 172.16.2.23 } ip daddr 172.16.4.11 tcp dport 1883 ct state new accept
+
                 # IoT may reach the Internet, while local control starts on trusted LANs.
                 iifname $IOT_LAN oifname $TUN meta nfproto ipv4 ct state new accept
                 iifname $IOT_LAN oifname $WAN meta nfproto ipv6 ct state new accept
