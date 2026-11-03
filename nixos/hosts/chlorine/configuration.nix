@@ -169,7 +169,7 @@ in
       "tss"
     ];
     openssh.authorizedKeys.keys = [
-      "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBKfz/Xt552eET1ALcAGLPiF+7ecxUgDaFb2Wpoj2dwJNbMTMgSbf/uSO2Gf92WlKnrBHqq3wlpkKmj44Y1NWkBg= helium"
+      "sk-ecdsa-sha2-nistp256@openssh.com AAAAInNrLWVjZHNhLXNoYTItbmlzdHAyNTZAb3BlbnNzaC5jb20AAAAIbmlzdHAyNTYAAABBBIDa675kNZNmSGYyH9T2SbHQWQ2v3W5CK1YEBaE9v96lFdr6aKnJnn0+VMtwPytnP4YjkkkFY0Pr2Zw+DDeCttYAAAAEc3NoOg== helium"
       "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBCpFZuDSmD3fYdkiC//bMx26LZqLc7/vyvGtraUf/CHzfPrMLTxCO+PDm0+ziJLWpJU2EpDEjnGzfsvAUj8/mIo= silicon"
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFro2O+EEcgDG5+hTMZmW/nI4kVOEast52pXFsjjpvhh iPhone-16"
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ2PgdZn8exGGP9omKddBRtu6QmHXGbEWv837YajSWY2 iPad-Air-M3"
