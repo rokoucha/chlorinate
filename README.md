@@ -31,3 +31,9 @@ When migrating WARP from subnet ID 4, remove its old global IPv6 addresses and
 routes before assigning that prefix to `br-iot`, and renew the guest's IPv6
 configuration. After networkd settles, restart `mape-tool.service` to restore
 its CE address if networkd removed it. Verify WARP health after the switch.
+
+## IPv6 LoadBalancer return path
+
+Server-LAN clients and the Kubernetes nodes share a link. LoadBalancer requests cross the router, but replies can otherwise return directly and bypass its conntrack state. The PD reconciler maps retained LB prefixes to the router's preferred current server-LAN address for hairpin SNAT. This keeps both directions through the router without host DNS overrides; other client networks retain their original source addresses.
+
+CI reproduces the asymmetric path in isolated Linux network namespaces and verifies that the actual firewall rules and reconciler restore TCP/HTTP connectivity.

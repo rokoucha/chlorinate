@@ -1,5 +1,6 @@
 import importlib.util
 import ipaddress
+import json
 from pathlib import Path
 import unittest
 from unittest.mock import patch
@@ -38,6 +39,34 @@ class PDTests(unittest.TestCase):
         self.assertEqual(result["pool"], pd.ranges("240b:10:1234:5600::/56")["pool"])
         self.assertEqual(pd.lease_delegation({"DHCPv6Client": {"Prefixes": prefixes}}, 100), result)
 
+    def test_hairpin_source_tracks_preferred_pd(self):
+        addresses = [{"addr_info": [
+            {},
+            {"local": "240b:10:3f6d:1402::1", "preferred_life_time": 0},
+            {"local": "240b:10:1234:5602::1", "preferred_life_time": 1800},
+            {"local": "240b:10:1234:5602::2", "preferred_life_time": 1800, "tentative": True},
+            {"local": "240b:10:1234:5602::4", "preferred_life_time": 1800, "flags": ["temporary"]},
+        ]}]
+        with patch.object(pd, "run", return_value=json.dumps(addresses)):
+            self.assertEqual(pd.router_address("lan", "240b:10:1234:5602::/64"), "240b:10:1234:5602::1")
+            with self.assertRaises(ValueError):
+                pd.router_address("lan", "240b:10:3f6d:1402::/64")
+        addresses[0]["addr_info"].append({"local": "240b:10:1234:5602::3", "preferred_life_time": 1800})
+        with patch.object(pd, "run", return_value=json.dumps(addresses)):
+            with self.assertRaises(ValueError):
+                pd.router_address("lan", "240b:10:1234:5602::/64")
+
+    def test_hairpin_map_retains_lb_generations_atomically(self):
+        old = pd.ranges("240b:10:3f6d:1400::/56")
+        new = pd.ranges("240b:10:1234:5600::/56")
+        with patch.object(pd, "run") as run:
+            pd.sync_boundary([old, new], "240b:10:1234:5602::1")
+        run.assert_called_once()
+        commands = run.call_args.kwargs["stdin"]
+        self.assertIn("flush map inet filter pd_lb_hairpin_snat", commands)
+        for generation in (old, new):
+            self.assertIn(generation["lbCIDR"] + " : 240b:10:1234:5602::1", commands)
+
     def test_actual_allocations_only(self):
         cidr = "240b:10:3f6d:1403:1000::100/120"
         node = {"metadata": {"name": "node"}, "spec": {"ipam": {"pools": {"allocated": [
@@ -58,7 +87,7 @@ class PDTests(unittest.TestCase):
             def cm(self, *args):
                 writes.append("desired")
         routes = '[{"type":"unreachable","dst":"240b:10:3f6d:1400::/56"}]'
-        with patch.object(pd, "run", return_value=routes), patch.object(pd, "lease_delegation", return_value=pd.ranges("240b:10:3f6d:1400::/56")), patch.object(pd, "sync_boundary"), patch.object(pd, "sync_routes", side_effect=RuntimeError("interrupted")):
+        with patch.object(pd, "run", return_value=routes), patch.object(pd, "lease_delegation", return_value=pd.ranges("240b:10:3f6d:1400::/56")), patch.object(pd, "sync_boundary"), patch.object(pd, "router_address", return_value="240b:10:3f6d:1402::1"), patch.object(pd, "sync_routes", side_effect=RuntimeError("interrupted")):
             with self.assertRaises(RuntimeError):
                 pd.reconcile(Kube(), {}, "vlan20", "vlan30", "wan")
         self.assertEqual(writes, ["CiliumPodIPPool"])
@@ -79,7 +108,7 @@ class PDTests(unittest.TestCase):
             def cm(self, *args):
                 writes.append("desired")
         routes = '[{"type":"unreachable","dst":"240b:10:1234:5600::/56"}]'
-        with patch.object(pd, "run", return_value=routes), patch.object(pd, "lease_delegation", return_value=new), patch.object(pd, "sync_routes"), patch.object(pd, "sync_boundary", side_effect=lambda g: boundaries.extend(g)):
+        with patch.object(pd, "run", return_value=routes), patch.object(pd, "lease_delegation", return_value=new), patch.object(pd, "sync_routes"), patch.object(pd, "router_address", return_value="240b:10:1234:5602::1"), patch.object(pd, "sync_boundary", side_effect=lambda g, source: boundaries.extend(g)):
             pd.reconcile(Kube(), {}, "vlan20", "vlan30", "wan")
         self.assertEqual({g["pool"] for g in boundaries}, {old["pool"], new["pool"]})
         self.assertEqual(writes, ["CiliumPodIPPool", "desired"])
