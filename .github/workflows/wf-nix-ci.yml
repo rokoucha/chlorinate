@@ -21,6 +21,12 @@ jobs:
       - name: Test PD reconciliation
         run: python3 -m unittest discover -s tests
 
+      - name: Test IPv6 LB hairpin routing
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y iproute2 nftables
+          sudo python3 tests/ipv6-lb-hairpin.py
+
       - name: Check flake
         run: nix flake check --all-systems --no-build
 

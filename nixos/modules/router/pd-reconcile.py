@@ -105,7 +105,20 @@ def sync_routes(desired):
         run("ip", "-6", "route", "del", cidr, "proto", PROTOCOL)
 
 
-def sync_boundary(generations):
+def router_address(lan, node_cidr):
+    network = ipaddress.ip_network(node_cidr)
+    addresses = json.loads(run("ip", "-j", "-6", "address", "show", "dev", lan, "scope", "global"))
+    candidates = {a["local"] for link in addresses for a in link.get("addr_info", [])
+                  if a.get("local") and ipaddress.ip_address(a["local"]) in network
+                  and a.get("preferred_life_time", 0) != 0
+                  and not any(a.get(flag, False) or flag in a.get("flags", [])
+                              for flag in ("tentative", "dadfailed", "deprecated", "temporary"))}
+    if len(candidates) != 1:
+        raise ValueError("a unique preferred router address in the current node LAN is required")
+    return candidates.pop()
+
+
+def sync_boundary(generations, source):
     generations = list(generations)
     sets = {"pd_node_lans": sorted({g["nodeCIDR"] for g in generations}),
             "pd_pods": sorted({g["podCIDR"] for g in generations}),
@@ -115,6 +128,10 @@ def sync_boundary(generations):
         commands.append("flush set inet filter " + name)
         if values:
             commands.append("add element inet filter " + name + " { " + ", ".join(values) + " }")
+    commands.append("flush map inet filter pd_lb_hairpin_snat")
+    elements = [cidr + " : " + source for cidr in sets["pd_lbs"]]
+    if elements:
+        commands.append("add element inet filter pd_lb_hairpin_snat { " + ", ".join(elements) + " }")
     run("nft", "-f", "-", stdin="\n".join(commands) + "\n")
 
 
@@ -179,7 +196,8 @@ def reconcile(kube, gateways, lan, lb_lan, wan):
     route_plan = desired_routes(nodes, gateways,
                                 [ipaddress.ip_network(g["podCIDR"]) for g in generations.values()],
                                 [g["lbCIDR"] for g in generations.values()], lan, lb_lan)
-    sync_boundary(generations.values())
+    source = router_address(lan, current["nodeCIDR"])
+    sync_boundary(generations.values(), source)
     sync_routes(route_plan)
     kube.cm("pd-desired", current)
     status = kube.get("configmap", "pd-migration-status", "kube-system", optional=True)

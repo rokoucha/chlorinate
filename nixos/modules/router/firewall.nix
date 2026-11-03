@@ -152,6 +152,18 @@ in
                 flags interval
             }
 
+            map pd_lb_hairpin_snat {
+                type ipv6_addr : ipv6_addr
+                flags interval
+            }
+
+            chain lb_hairpin_postrouting {
+                type nat hook postrouting priority srcnat; policy accept;
+
+                # LB nodes share SRV_LAN with clients; keep replies through conntrack.
+                iifname $SRV_LAN oifname $MATERIA_LAN ip6 saddr @pd_node_lans snat ip6 to ip6 daddr map @pd_lb_hairpin_snat
+            }
+
             chain forward {
                 type filter hook forward priority filter; policy drop;
 
