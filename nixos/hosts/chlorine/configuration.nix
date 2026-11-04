@@ -146,7 +146,7 @@ in
     settings = {
       PasswordAuthentication = false;
       PermitRootLogin = "no";
-      PubkeyAcceptedAlgorithms = "ssh-ed25519,ecdsa-sha2-nistp256";
+      PubkeyAcceptedAlgorithms = "ssh-ed25519,ecdsa-sha2-nistp256,sk-ecdsa-sha2-nistp256@openssh.com";
       HostKeyAlgorithms = "ssh-ed25519,ecdsa-sha2-nistp256";
     };
   };
