@@ -10,6 +10,14 @@
 - NIC1: Intel Corporation Ethernet Controller I226-V(3 ports)
 - NIC2: Intel Corporation 82599ES(2 ports)
 
+## Home WARP egress
+
+Home-LAN traffic to `yodobashi.com` and its subdomains uses WARP, alongside
+`challenges.cloudflare.com`. The router learns destination addresses from its
+DNS responses; clients must use the router's DNS. Routing is by destination IP,
+so other domains sharing a learned address also use WARP. If WARP is unhealthy,
+traffic falls back to the usual uplink. Server and materia egress stays on iTSCOM.
+
 ## IoT network
 
 - VLAN 40 on `enp5s0f1`, bridged with the USB WLAN on `br-iot`.

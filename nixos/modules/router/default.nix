@@ -49,6 +49,7 @@
     # platform so that a complete Turnstile flow keeps one egress identity.
     warpDomains = [
       "challenges.cloudflare.com"
+      "yodobashi.com"
     ];
     itscomV4 = "172.16.254.10";
     itscomPublicV4 = "175.177.69.46";
